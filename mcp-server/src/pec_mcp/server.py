@@ -4,6 +4,7 @@ Servidor MCP FastMCP para consultas clínicas no PEC.
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from mcp.server.fastmcp import Context, FastMCP
@@ -14,22 +15,27 @@ from .db import get_connection
 mcp = FastMCP("pec-mcp")
 
 
-@mcp.lifespan
-async def lifespan(ctx: Context):
-    """
-    Abre conexão única com o banco durante o ciclo de vida do servidor.
+if hasattr(mcp, "lifespan"):
+    @mcp.lifespan
+    async def lifespan(ctx: Context):
+        """
+        Abre conexão única com o banco durante o ciclo de vida do servidor.
 
-    Mantemos a conexão no estado do contexto para ser reutilizada pelas tools,
-    reduzindo overhead de abertura/fechamento (DRY/KISS).
-    """
+        Mantemos a conexão no estado do contexto para ser reutilizada pelas tools,
+        reduzindo overhead de abertura/fechamento (DRY/KISS).
+        """
 
-    conn = get_connection()
-    ctx.state["db_conn"] = conn
-    try:
-        yield
-    finally:
-        # Garante fechamento limpo ao encerrar o servidor MCP.
-        conn.close()
+        conn = get_connection()
+        ctx.state["db_conn"] = conn
+        try:
+            yield
+        finally:
+            # Garante fechamento limpo ao encerrar o servidor MCP.
+            conn.close()
+else:
+    # Fallback para versões antigas do FastMCP sem suporte a @lifespan.
+    # As tools farão fallback para uma conexão global compartilhada.
+    pass
 
 
 # Importações tardias para evitar ciclos antes da instância do MCP existir.
@@ -52,6 +58,14 @@ def main() -> Any:
     """
 
     # O transporte "streamable-http" é adequado para execução local via mcp-cli.
+    host = os.getenv("MCP_HTTP_HOST", "127.0.0.1")
+    port = int(os.getenv("MCP_HTTP_PORT", "5174"))
+
+    # Ajusta host/port diretamente nas settings do FastMCP (API pública).
+    mcp.settings.host = host
+    mcp.settings.port = port
+
+    print(f"[pec-mcp] Iniciando Streamable HTTP em http://{host}:{port}")
     return mcp.run(transport="streamable-http")
 
 

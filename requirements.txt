@@ -1,4 +1,9 @@
 mcp[cli]
 psycopg2-binary
 python-dotenv
+fastapi
+uvicorn[standard]
+jinja2
+typing_extensions
+anthropic
 pytest

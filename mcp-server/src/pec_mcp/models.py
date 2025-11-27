@@ -7,7 +7,12 @@ evitando ambiguidade de campos.
 
 from __future__ import annotations
 
-from typing import Optional, TypedDict
+from typing import Optional
+
+try:  # Pydantic <3 exige typing_extensions.TypedDict em Python < 3.12
+    from typing_extensions import TypedDict  # type: ignore
+except ImportError:  # pragma: no cover - fallback para ambientes que já suportam
+    from typing import TypedDict  # type: ignore
 
 
 class GestanteResult(TypedDict):

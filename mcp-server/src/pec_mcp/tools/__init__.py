@@ -7,20 +7,33 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Optional
 
+from ..db import get_connection
+
 from mcp.server.fastmcp import Context
+
+_GLOBAL_CONN = None  # Fallback para versões do FastMCP sem lifecycle
 
 
 def get_db_conn(ctx: Context):
     """
     Obtém conexão de banco armazenada no estado do contexto.
 
-    Preferimos lançar erro claro caso o lifespan não tenha provisionado
-    a conexão para evitar falhas silenciosas.
+    Se o FastMCP da runtime não suportar lifecycle (@lifespan), fazemos
+    fallback para uma conexão global compartilhada para manter
+    compatibilidade.
     """
 
-    conn = ctx.state.get("db_conn")
+    global _GLOBAL_CONN
+
+    conn: Optional[object] = None
+    state = getattr(ctx, "state", None)
+    if isinstance(state, dict):
+        conn = state.get("db_conn")
+
     if conn is None:
-        raise RuntimeError("Conexão do banco não encontrada no contexto MCP")
+        if _GLOBAL_CONN is None or getattr(_GLOBAL_CONN, "closed", False):
+            _GLOBAL_CONN = get_connection()
+        conn = _GLOBAL_CONN
     return conn
 
 

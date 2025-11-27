@@ -4,7 +4,17 @@ Fixtures compartilhadas para testes das tools MCP.
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import pytest
+
+# Garante que o pacote pec_mcp seja encontrado mesmo após mover o código
+# para mcp-server/src sem depender de PYTHONPATH externo.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SERVER_SRC = PROJECT_ROOT / "mcp-server" / "src"
+if str(SERVER_SRC) not in sys.path:
+    sys.path.insert(0, str(SERVER_SRC))
 
 from pec_mcp.db import get_connection, query_all
 
