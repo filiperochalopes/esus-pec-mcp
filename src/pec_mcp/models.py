@@ -54,3 +54,20 @@ __all__ = [
     "ProblemaResult",
     "AtendimentoSOAPResult",
 ]
+
+
+class EpidemiologiaComorbidadeResult(TypedDict):
+    codigo_cid10: Optional[str]
+    descricao_cid10: Optional[str]
+    total_pacientes: int
+    sexo: Optional[str]
+    faixa_etaria: Optional[str]
+    localidade_id: Optional[int]
+
+
+class PessoalFiltroResult(TypedDict):
+    paciente_id: int
+    nome_paciente: Optional[str]
+    data_referencia: Optional[str]
+    detalhe: Optional[str]
+    metrica: Optional[str]

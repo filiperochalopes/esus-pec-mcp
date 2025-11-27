@@ -36,11 +36,14 @@ async def lifespan(ctx: Context):
 from .tools.gestantes import listar_gestantes
 from .tools.problemas import listar_problemas_paciente
 from .tools.atendimentos import listar_ultimos_atendimentos_soap
+from .tools.analytics import consulta_epidemiologia, consulta_pessoal
 
 # Registro das tools no MCP.
 mcp.tool()(listar_gestantes)
 mcp.tool()(listar_problemas_paciente)
 mcp.tool()(listar_ultimos_atendimentos_soap)
+mcp.tool()(consulta_epidemiologia)
+mcp.tool()(consulta_pessoal)
 
 
 def main() -> Any:

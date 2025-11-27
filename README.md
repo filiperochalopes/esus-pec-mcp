@@ -31,6 +31,11 @@ pytest
 ```
 - Para focar em atendimentos SOAP: `export PYTHONPATH=src && pytest tests/test_tools_atendimentos.py`
 - Cobertura adicional de cenários de SOAP (campo a campo) será ampliada em breve.
+
+## Tools adicionais (analytics)
+- `consulta_epidemiologia`: agregação de comorbidades (CID-10) com filtros de sexo, faixa etária e localidade.
+- `consulta_pessoal`: filtros clínicos pré-definidos (sem atendimento em períodos, gestantes, hipertensos, HbA1c>8, PA>140/90).
+- Para exercitar apenas estas ferramentas: `export PYTHONPATH=src && pytest tests/test_tools_analytics.py`
 - Os testes pulam automaticamente se o banco estiver indisponível.
 - Para validar ferramentas, garanta que o PostgreSQL esteja acessível com os dados fornecidos nas variáveis de ambiente.
 
