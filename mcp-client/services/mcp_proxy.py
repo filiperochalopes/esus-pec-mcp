@@ -14,7 +14,7 @@ from typing import Any, Dict, List, get_args, get_origin
 
 from fastapi.encoders import jsonable_encoder
 
-from ..config import apply_db_config, load_db_config
+from config import apply_db_config, load_db_config
 from pec_mcp.db import get_connection
 from pec_mcp.tools.analytics import consulta_epidemiologia, consulta_pessoal
 from pec_mcp.tools.atendimentos import listar_ultimos_atendimentos_soap

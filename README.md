@@ -19,7 +19,7 @@ Servidor MCP em Python para consultar dados clínicos do PEC (pré-natal, proble
 
 ## Rodando o servidor MCP
 ```bash
-export PYTHONPATH=mcp-server/src  # garante resolução do pacote pec_mcp
+export PYTHONPATH=mcp-server      # garante resolução do pacote pec_mcp
 export MCP_HTTP_PORT=5174        # porta separada da UI
 export MCP_HTTP_HOST=127.0.0.1
 python -m pec_mcp.server
@@ -28,8 +28,8 @@ python -m pec_mcp.server
 
 ## Rodando a UI FastAPI/Jinja2
 ```bash
-export PYTHONPATH="mcp-server/src:mcp-client"
-uvicorn mcp_client.main:app --host 0.0.0.0 --port 8000 --reload
+export PYTHONPATH="mcp-server:mcp-client"
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload --app-dir mcp-client
 ```
 - Tema escuro, Tailwind+Alpine, painel retrátil para tool calls e engrenagem no topo para ajustar credenciais do banco (persistidas em `.env`).
 - Integração direta (sem GraphQL), chamando as tools via backend Python.
@@ -45,21 +45,21 @@ chmod +x entrypoint.sh
 
 ## Testes
 ```bash
-export PYTHONPATH=mcp-server/src
+export PYTHONPATH=mcp-server
 pytest
 ```
-- Para focar em atendimentos SOAP: `export PYTHONPATH=mcp-server/src && pytest tests/test_tools_atendimentos.py`
+- Para focar em atendimentos SOAP: `export PYTHONPATH=mcp-server && pytest tests/test_tools_atendimentos.py`
 - Cobertura adicional de cenários de SOAP (campo a campo) será ampliada em breve.
 
 ## Tools adicionais (analytics)
 - `consulta_epidemiologia`: agregação de comorbidades (CID-10) com filtros de sexo, faixa etária e localidade.
 - `consulta_pessoal`: filtros clínicos pré-definidos (sem atendimento em períodos, gestantes, hipertensos, HbA1c>8, PA>140/90).
-- Para exercitar apenas estas ferramentas: `export PYTHONPATH=mcp-server/src && pytest tests/test_tools_analytics.py`
+- Para exercitar apenas estas ferramentas: `export PYTHONPATH=mcp-server && pytest tests/test_tools_analytics.py`
 - Os testes pulam automaticamente se o banco estiver indisponível.
 - Para validar ferramentas, garanta que o PostgreSQL esteja acessível com os dados fornecidos nas variáveis de ambiente.
 
 ## Estrutura
-- `mcp-server/src/pec_mcp/`: código-fonte (config, conexão, models, tools e servidor MCP)
+- `mcp-server/pec_mcp/`: código-fonte (config, conexão, models, tools e servidor MCP)
 - `mcp-client/`: UI FastAPI + Jinja2 + Alpine/Tailwind (tema escuro)
 - `mcp-client-react/`: UI React legada (referência de UX)
 - `tests/`: suíte pytest cobrindo conexão e tools

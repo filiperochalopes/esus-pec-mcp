@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-export PYTHONPATH="$ROOT/mcp-server/src:$ROOT/mcp-client"
+export PYTHONPATH="$ROOT/mcp-server:$ROOT/mcp-client"
 
 UI_PORT="${UI_PORT:-8000}"
 UI_HOST="${UI_HOST:-0.0.0.0}"
@@ -19,7 +19,7 @@ $MCP_CMD &
 MCP_PID=$!
 
 echo "==> Iniciando UI FastAPI em http://${UI_HOST}:${UI_PORT}"
-uvicorn mcp_client.main:app --host "$UI_HOST" --port "$UI_PORT" &
+uvicorn main:app --host "$UI_HOST" --port "$UI_PORT" --app-dir "$ROOT/mcp-client" &
 UI_PID=$!
 
 cleanup() {

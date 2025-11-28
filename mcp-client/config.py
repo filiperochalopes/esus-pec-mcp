@@ -17,11 +17,11 @@ from typing import Dict
 
 from dotenv import dotenv_values
 
-# Garante acesso ao pacote pec_mcp a partir do novo caminho mcp-server/src.
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-SERVER_SRC = PROJECT_ROOT / "mcp-server" / "src"
-if str(SERVER_SRC) not in sys.path:
-    sys.path.insert(0, str(SERVER_SRC))
+# Garante acesso ao pacote pec_mcp a partir do caminho achatado em mcp-server.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SERVER_DIR = PROJECT_ROOT / "mcp-server"
+if str(SERVER_DIR) not in sys.path:
+    sys.path.insert(0, str(SERVER_DIR))
 
 from pec_mcp import config as mcp_config  # noqa: E402
 

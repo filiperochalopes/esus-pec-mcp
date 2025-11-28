@@ -5,6 +5,7 @@ Aplicação FastAPI com Jinja2/Alpine para inspecionar o PEC MCP.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -15,9 +16,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
-from .config import DbConfig, apply_db_config, load_db_config, persist_db_config
-from .services.mcp_proxy import call_tool, list_tools
-from .services.claude_agent import run_claude_chat
+from config import DbConfig, apply_db_config, load_db_config, persist_db_config
+from services.mcp_proxy import call_tool, list_tools
+from services.claude_agent import run_claude_chat
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -71,12 +72,17 @@ async def health() -> Dict[str, str]:
 async def index(request: Request):
     cfg = load_db_config()
     initial_config_json = json.dumps(cfg.as_dict())
+    claude_defaults = {
+        "api_key": os.getenv("ANTHROPIC_API_KEY", ""),
+        "model": os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022"),
+    }
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
             "initial_config": cfg.as_dict(),
             "initial_config_json": initial_config_json,
+            "claude_defaults": claude_defaults,
         },
     )
 

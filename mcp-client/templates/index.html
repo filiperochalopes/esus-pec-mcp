@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b1220" />
+  <title>PEC MCP • Console</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.10/dist/tailwind.min.css" />
+  <link rel="stylesheet" href="/static/css/styles.css" />
+  <script id="initial-config" type="application/json">{{ initial_config_json | safe }}</script>
+  <script id="claude-defaults" type="application/json">{{ claude_defaults | tojson | safe }}</script>
+</head>
+<body class="bg-slate-950 text-slate-100">
+  <div class="relative min-h-screen overflow-hidden">
+    <div class="hero-shape"></div>
+
+    <main class="max-w-5xl mx-auto px-6 py-8" x-data="mcpConsole()" x-cloak>
+      <header class="flex items-center justify-between gap-4">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-2 rounded-full bg-slate-900/70 px-3 py-2 border border-slate-800">
+            <span class="h-2 w-2 rounded-full" :class="status === 'connected' ? 'bg-emerald-400' : status === 'error' ? 'bg-rose-400' : 'bg-amber-300'"></span>
+            <span class="text-sm" x-text="statusMessage"></span>
+          </div>
+          <div>
+            <h1 class="text-2xl font-semibold tracking-tight">PEC MCP · Console</h1>
+            <p class="text-sm text-slate-300">Chat direto com o servidor MCP via StdIO. Tema dark azul.</p>
+          </div>
+        </div>
+        <button type="button" class="btn-ghost h-12 w-12 flex items-center justify-center" @click="configOpen = true" :aria-pressed="configOpen">
+          <span class="sr-only">Configurações</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11.983 4.517a1 1 0 0 1 .934 0l1.43.745a1 1 0 0 0 .9 0l1.43-.745a1 1 0 0 1 1.451 1.054l-.273 1.6a1 1 0 0 0 .288.885l1.157 1.087a1 1 0 0 1-.56 1.707l-1.582.23a1 1 0 0 0-.75.547l-.707 1.443a1 1 0 0 1-1.794 0l-.708-1.443a1 1 0 0 0-.749-.547l-1.582-.23a1 1 0 0 1-.56-1.707l1.157-1.087a1 1 0 0 0 .288-.885l-.273-1.6a1 1 0 0 1 1.054-1.176z" />
+            <circle cx="12" cy="12" r="2" />
+          </svg>
+        </button>
+      </header>
+
+      <section class="glass rounded-2xl p-6 mt-8 space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-semibold">Chat Claude + MCP</h2>
+            <p class="text-sm text-slate-300">Mensagens e tool calling aparecem na linha do tempo.</p>
+          </div>
+          <span class="badge">Tema dark · Azul</span>
+        </div>
+
+        <div class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 max-h-[480px] overflow-y-auto space-y-4">
+          <template x-if="!claudeEvents.length">
+            <p class="text-sm text-slate-400">Envie uma mensagem para iniciar o chat.</p>
+          </template>
+          <template x-for="event in claudeEvents" :key="event.id">
+            <article class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-3">
+              <div class="flex items-center justify-between text-xs text-slate-400">
+                <span class="chip">
+                  <span class="h-2 w-2 rounded-full" :class="event.type === 'USER_MESSAGE' ? 'bg-sky-400' : event.type === 'MODEL_MESSAGE' ? 'bg-emerald-400' : event.type === 'TOOL_CALL' ? 'bg-amber-400' : event.type === 'TOOL_RESULT' ? 'bg-indigo-300' : 'bg-slate-400'"></span>
+                  <span x-text="event.type"></span>
+                </span>
+                <span x-text="formatTs(event.timestamp || event.ts || new Date())"></span>
+              </div>
+              <template x-if="event.text">
+                <p class="text-sm leading-relaxed text-slate-100" x-text="event.text"></p>
+              </template>
+              <template x-if="event.tool_name">
+                <p class="text-sm text-slate-200">Tool: <span class="font-semibold" x-text="event.tool_name"></span></p>
+              </template>
+              <template x-if="event.tool_input">
+                <pre class="code-block" x-text="formatJson(event.tool_input)"></pre>
+              </template>
+              <template x-if="event.tool_output">
+                <pre class="code-block" x-text="formatJson(event.tool_output)"></pre>
+              </template>
+              <template x-if="event.duration_ms">
+                <p class="text-xs text-slate-400" x-text="`Duração: ${event.duration_ms} ms`"></p>
+              </template>
+            </article>
+          </template>
+        </div>
+
+        <div class="space-y-3">
+          <label class="text-sm text-slate-300" for="prompt">Mensagem</label>
+          <textarea id="prompt" class="input min-h-[104px]" x-model="claudePrompt" placeholder="Pergunte algo e acompanhe os tool calls do Claude" @keydown.enter.meta.prevent="runClaude()" @keydown.enter.ctrl.prevent="runClaude()"></textarea>
+          <div class="flex items-center gap-3">
+            <button type="button" class="btn-primary" @click="runClaude()" :disabled="claudeBusy">
+              <span x-show="!claudeBusy">Enviar</span>
+              <span x-show="claudeBusy" class="flex items-center gap-2">
+                <span class="h-2 w-2 rounded-full bg-slate-100 animate-ping"></span>
+                Processando...
+              </span>
+            </button>
+            <p class="text-sm text-rose-200" x-show="claudeError" x-text="claudeError"></p>
+          </div>
+        </div>
+      </section>
+
+      <template x-if="configOpen">
+        <div class="fixed inset-0 z-30 flex items-center justify-center px-6" role="dialog" aria-modal="true">
+          <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" @click="configOpen = false"></div>
+          <div class="relative glass w-full max-w-2xl rounded-2xl p-6 space-y-5">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-lg font-semibold">Configurações</h2>
+                <p class="text-sm text-slate-300">Valores padrão usam as variáveis de ambiente.</p>
+              </div>
+              <button type="button" class="btn-ghost" @click="configOpen = false">Fechar</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label class="space-y-1 text-sm">
+                <span class="text-slate-200">Host</span>
+                <input class="input" type="text" x-model="config.host" placeholder="localhost" />
+              </label>
+              <label class="space-y-1 text-sm">
+                <span class="text-slate-200">Porta</span>
+                <input class="input" type="text" x-model="config.port" placeholder="5432" />
+              </label>
+              <label class="space-y-1 text-sm">
+                <span class="text-slate-200">Database</span>
+                <input class="input" type="text" x-model="config.name" placeholder="postgres" />
+              </label>
+              <label class="space-y-1 text-sm">
+                <span class="text-slate-200">Usuário</span>
+                <input class="input" type="text" x-model="config.user" placeholder="esus" />
+              </label>
+              <label class="space-y-1 text-sm md:col-span-2">
+                <span class="text-slate-200">Senha</span>
+                <input class="input" type="password" x-model="config.password" placeholder="••••••" />
+              </label>
+              <label class="space-y-1 text-sm md:col-span-2">
+                <span class="text-slate-200">Anthropic API Key</span>
+                <input class="input" type="password" x-model="claudeApiKey" placeholder="sk-ant-..." />
+              </label>
+              <label class="space-y-1 text-sm">
+                <span class="text-slate-200">Modelo Claude</span>
+                <input class="input" type="text" x-model="claudeModel" placeholder="claude-3-5-sonnet-20241022" />
+              </label>
+              <label class="space-y-1 text-sm md:col-span-2">
+                <span class="text-slate-200">System prompt (opcional)</span>
+                <textarea class="input min-h-[96px]" x-model="claudeSystem"></textarea>
+              </label>
+            </div>
+            <div class="flex items-center gap-3">
+              <button class="btn-primary" type="button" @click="saveConfig()" :disabled="savingConfig">
+                <span x-show="!savingConfig">Salvar</span>
+                <span x-show="savingConfig" class="flex items-center gap-2">
+                  <span class="h-2 w-2 rounded-full bg-slate-100 animate-ping"></span>
+                  Gravando...
+                </span>
+              </button>
+              <p class="text-sm text-rose-200" x-show="configError" x-text="configError"></p>
+            </div>
+          </div>
+        </div>
+      </template>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/alpinejs@3.14.0/dist/cdn.min.js" defer></script>
+  <script src="/static/js/app.js" defer></script>
+</body>
+</html>
