@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b1220" />
   <title>PEC MCP • Console</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.10/dist/tailwind.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/css/styles.css" />
   <script id="initial-config" type="application/json">{{ initial_config_json | safe }}</script>
   <script id="claude-defaults" type="application/json">{{ claude_defaults | tojson | safe }}</script>
@@ -14,7 +14,7 @@
   <div class="relative min-h-screen overflow-hidden">
     <div class="hero-shape"></div>
 
-    <main class="max-w-5xl mx-auto px-6 py-8" x-data="mcpConsole()" x-cloak>
+    <main class="max-w-5xl mx-auto px-6 py-8" x-data="mcpConsole" x-cloak>
       <header class="flex items-center justify-between gap-4">
         <div class="space-y-2">
           <div class="inline-flex items-center gap-2 rounded-full bg-slate-900/70 px-3 py-2 border border-slate-800">
@@ -29,8 +29,8 @@
         <button type="button" class="btn-ghost h-12 w-12 flex items-center justify-center" @click="configOpen = true" :aria-pressed="configOpen">
           <span class="sr-only">Configurações</span>
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M11.983 4.517a1 1 0 0 1 .934 0l1.43.745a1 1 0 0 0 .9 0l1.43-.745a1 1 0 0 1 1.451 1.054l-.273 1.6a1 1 0 0 0 .288.885l1.157 1.087a1 1 0 0 1-.56 1.707l-1.582.23a1 1 0 0 0-.75.547l-.707 1.443a1 1 0 0 1-1.794 0l-.708-1.443a1 1 0 0 0-.749-.547l-1.582-.23a1 1 0 0 1-.56-1.707l1.157-1.087a1 1 0 0 0 .288-.885l-.273-1.6a1 1 0 0 1 1.054-1.176z" />
-            <circle cx="12" cy="12" r="2" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.592c.55 0 1.02.398 1.11.94l.213 1.284c.06.36.31.659.65.79a8.993 8.993 0 0 1 1.37.708c.31.195.71.201 1.02.02l1.122-.655a1.125 1.125 0 0 1 1.44.404l1.296 2.247c.27.466.17 1.06-.24 1.42l-.998.86a1.125 1.125 0 0 0-.367.966 9.05 9.05 0 0 1 0 1.416c-.04.36.1.716.368.966l.998.86c.41.36.51.954.24 1.42l-1.296 2.247a1.125 1.125 0 0 1-1.44.404l-1.122-.655a1.125 1.125 0 0 0-1.02.02 8.993 8.993 0 0 1-1.37.708 1.125 1.125 0 0 0-.65.79l-.213 1.285c-.09.541-.56.94-1.11.94h-2.592c-.55 0-1.02-.399-1.11-.94l-.213-1.285a1.125 1.125 0 0 0-.65-.79 8.993 8.993 0 0 1-1.37-.708 1.125 1.125 0 0 0-1.02-.02l-1.122.655a1.125 1.125 0 0 1-1.44-.404l-1.296-2.247a1.125 1.125 0 0 1 .24-1.42l.998-.86c.269-.25.409-.606.368-.966a9.042 9.042 0 0 1 0-1.416c.04-.36-.1-.716-.368-.966l-.998-.86a1.125 1.125 0 0 1-.24-1.42l1.296-2.247a1.125 1.125 0 0 1 1.44-.404l1.122.655c.31.181.71.175 1.02-.02a8.99 8.99 0 0 1 1.37-.708c.34-.131.59-.43.65-.79z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
           </svg>
         </button>
       </header>
@@ -79,7 +79,7 @@
         <div class="space-y-3">
           <label class="text-sm text-slate-300" for="prompt">Mensagem</label>
           <textarea id="prompt" class="input min-h-[104px]" x-model="claudePrompt" placeholder="Pergunte algo e acompanhe os tool calls do Claude" @keydown.enter.meta.prevent="runClaude()" @keydown.enter.ctrl.prevent="runClaude()"></textarea>
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-4">
             <button type="button" class="btn-primary" @click="runClaude()" :disabled="claudeBusy">
               <span x-show="!claudeBusy">Enviar</span>
               <span x-show="claudeBusy" class="flex items-center gap-2">
@@ -137,7 +137,7 @@
                 <textarea class="input min-h-[96px]" x-model="claudeSystem"></textarea>
               </label>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-4">
               <button class="btn-primary" type="button" @click="saveConfig()" :disabled="savingConfig">
                 <span x-show="!savingConfig">Salvar</span>
                 <span x-show="savingConfig" class="flex items-center gap-2">
