@@ -1,6 +1,6 @@
 # PEC MCP (MVP)
 
-Servidor MCP em Python para consultar dados clínicos do PEC (pré-natal, problemas CID-10 e atendimentos SOAP) via FastMCP.
+Servidor MCP em Python para consultar dados clínicos do PEC. No MVP atual, expomos apenas uma ferramenta focada em captura anonimizada de paciente (iniciais, data de nascimento, sexo e gênero).
 
 ## Requisitos
 - Python 3.11+
@@ -48,15 +48,14 @@ chmod +x entrypoint.sh
 export PYTHONPATH=mcp-server
 pytest
 ```
-- Para focar em atendimentos SOAP: `export PYTHONPATH=mcp-server && pytest tests/test_tools_atendimentos.py`
-- Cobertura adicional de cenários de SOAP (campo a campo) será ampliada em breve.
+- Para focar na tool de captura anonimizada: `export PYTHONPATH=mcp-server && pytest tests/test_tool_paciente.py`
 
-## Tools adicionais (analytics)
-- `consulta_epidemiologia`: agregação de comorbidades (CID-10) com filtros de sexo, faixa etária e localidade.
-- `consulta_pessoal`: filtros clínicos pré-definidos (sem atendimento em períodos, gestantes, hipertensos, HbA1c>8, PA>140/90).
-- Para exercitar apenas estas ferramentas: `export PYTHONPATH=mcp-server && pytest tests/test_tools_analytics.py`
-- Os testes pulam automaticamente se o banco estiver indisponível.
-- Para validar ferramentas, garanta que o PostgreSQL esteja acessível com os dados fornecidos nas variáveis de ambiente.
+## Tool disponível (MVP)
+- `capturar_paciente`: recebe filtros (ex.: `paciente_id`, `name_starts_with`, `sex`, `age_min/age_max`) e retorna um registro mínimo sem PII direta:
+  - `name`: iniciais do nome completo (ex.: \"Joao de Carvalho Lima\" -> \"JCL\")
+  - `birth_date`: data de nascimento (YYYY-MM-DD)
+  - `sex`: sexo (coluna `no_sexo`, valores típicos: MASCULINO/FEMININO/INDETERMINADO; aceita aliases M/F/I)
+  - `gender`: igual ao sexo por enquanto (fallback até existir coluna dedicada)
 
 ## Estrutura
 - `mcp-server/pec_mcp/`: código-fonte (config, conexão, models, tools e servidor MCP)

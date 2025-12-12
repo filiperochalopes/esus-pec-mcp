@@ -16,10 +16,7 @@ from fastapi.encoders import jsonable_encoder
 
 from config import apply_db_config, load_db_config
 from pec_mcp.db import get_connection
-from pec_mcp.tools.analytics import consulta_epidemiologia, consulta_pessoal
-from pec_mcp.tools.atendimentos import listar_ultimos_atendimentos_soap
-from pec_mcp.tools.gestantes import listar_gestantes
-from pec_mcp.tools.problemas import listar_problemas_paciente
+from pec_mcp.tools.paciente import capturar_paciente
 
 
 class _Ctx:
@@ -32,110 +29,43 @@ class _Ctx:
 
 
 TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
-    "listar_gestantes": {
-        "func": listar_gestantes,
-        "description": "Lista gestações ativas (2–42 semanas) com DPP e status de risco.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "limite": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 200,
-                    "default": 50,
-                    "description": "Quantidade máxima de gestações a retornar (1-200).",
-                }
-            },
-        },
-    },
-    "listar_problemas_paciente": {
-        "func": listar_problemas_paciente,
-        "description": "Retorna problemas/comorbidades (CID-10) do paciente.",
+    "capturar_paciente": {
+        "func": capturar_paciente,
+        "description": "Returns de-identified patient records (initials, birth date, sex, gender) by id or filters.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "paciente_id": {
                     "type": "integer",
-                    "description": "Identificador do paciente (co_cidadao).",
-                }
-            },
-            "required": ["paciente_id"],
-        },
-    },
-    "listar_ultimos_atendimentos_soap": {
-        "func": listar_ultimos_atendimentos_soap,
-        "description": "Últimos atendimentos SOAP do paciente por médicos/enfermeiros.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "paciente_id": {
+                    "description": "Identificador interno do paciente (co_seq_cidadao).",
+                },
+                "name_starts_with": {
+                    "type": "string",
+                    "description": "Prefixo do nome (por exemplo, 'A').",
+                },
+                "sex": {
+                    "type": "string",
+                    "description": "Sexo (ex.: 'MASCULINO', 'FEMININO', 'INDETERMINADO'; aceita aliases M/F/I).",
+                },
+                "age_min": {
                     "type": "integer",
-                    "description": "Identificador do paciente (co_cidadao).",
+                    "description": "Idade mínima (anos).",
+                },
+                "age_max": {
+                    "type": "integer",
+                    "description": "Idade máxima (anos).",
                 },
                 "limite": {
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 200,
-                    "default": 10,
+                    "default": 50,
                     "description": "Quantidade máxima de registros (1-200).",
                 },
             },
-            "required": ["paciente_id"],
+            "required": [],
         },
-    },
-    "consulta_epidemiologia": {
-        "func": consulta_epidemiologia,
-        "description": "Agregação de comorbidades por filtros de sexo, faixa etária e localidade.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "tipo": {
-                    "type": "string",
-                    "enum": ["comorbidades_por_filtro"],
-                    "default": "comorbidades_por_filtro",
-                },
-                "sexo": {"type": "string", "description": "M/F, opcional."},
-                "idade_min": {"type": "integer", "description": "Idade mínima."},
-                "idade_max": {"type": "integer", "description": "Idade máxima."},
-                "localidade_id": {"type": "integer", "description": "Código da localidade/endereço."},
-                "limite": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 500,
-                    "default": 50,
-                    "description": "Limite de linhas agregadas (1-500).",
-                },
-            },
-        },
-    },
-    "consulta_pessoal": {
-        "func": consulta_pessoal,
-        "description": "Retorna pacientes que atendem a filtros clínicos pré-definidos.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "tipo": {
-                    "type": "string",
-                    "enum": [
-                        "sem_atendimento_ano",
-                        "gestante_sem_atendimento_mes",
-                        "hipertenso_sem_atendimento_6m",
-                        "hba1c_maior_8",
-                        "pa_maior_140_90",
-                    ],
-                    "description": "Filtro clínico desejado.",
-                },
-                "limite": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 500,
-                    "default": 50,
-                    "description": "Quantidade máxima de pacientes (1-500).",
-                },
-            },
-            "required": ["tipo"],
-        },
-    },
+    }
 }
 
 

@@ -50,4 +50,18 @@ def to_iso_datetime(value) -> Optional[str]:
     return str(value)
 
 
-__all__ = ["get_db_conn", "to_iso_datetime"]
+def to_iso_date(value) -> Optional[str]:
+    """
+    Converte date/datetime para string ISO (apenas data) ou retorna None.
+    """
+
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    return str(value)
+
+
+__all__ = ["get_db_conn", "to_iso_datetime", "to_iso_date"]

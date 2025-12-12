@@ -1,0 +1,134 @@
+"""
+Tool minimalista para capturar dados de pacientes de forma anonimizada.
+"""
+
+from __future__ import annotations
+
+import re
+from typing import List, Optional
+
+from mcp.server.fastmcp import Context
+
+from ..db import query_all
+from ..models import PatientCaptureResult
+from . import get_db_conn, to_iso_date
+
+_AGE_EXPR = "DATE_PART('year', AGE(CURRENT_DATE, c.dt_nascimento))"
+
+_SQL_BASE = """
+SELECT
+    c.no_cidadao    AS nome_paciente,
+    c.dt_nascimento AS data_nascimento,
+    c.no_sexo       AS sexo
+FROM tb_cidadao c
+{where_clause}
+ORDER BY c.co_seq_cidadao
+LIMIT %s;
+"""
+
+
+def _to_initials(full_name: Optional[str]) -> str:
+    """
+    Converte nome completo em iniciais (ex.: "Joao de Carvalho Lima" -> "JCL").
+    """
+
+    if not full_name:
+        return "N/A"
+    parts = re.split(r"\s+", str(full_name).strip())
+    skip = {"de", "da", "do", "das", "dos"}
+    initials = [p[0].upper() for p in parts if p and p.lower() not in skip]
+    return "".join(initials) if initials else "N/A"
+
+
+def _normalize_sex(sex: Optional[str]) -> Optional[str]:
+    """
+    Normaliza sexo para valores do banco (MASCULINO, FEMININO, INDETERMINADO).
+    """
+
+    if sex is None:
+        return None
+    value = str(sex).strip().upper()
+    aliases = {
+        "M": "MASCULINO",
+        "F": "FEMININO",
+        "I": "INDETERMINADO",
+        "MASCULINO": "MASCULINO",
+        "FEMININO": "FEMININO",
+        "INDETERMINADO": "INDETERMINADO",
+    }
+    return aliases.get(value)
+
+
+def _build_filters(
+    paciente_id: Optional[int],
+    name_prefix: Optional[str],
+    sex: Optional[str],
+    age_min: Optional[int],
+    age_max: Optional[int],
+) -> tuple[str, list]:
+    clauses: list[str] = []
+    params: list = []
+
+    if paciente_id is not None:
+        clauses.append("c.co_seq_cidadao = %s")
+        params.append(paciente_id)
+    if name_prefix:
+        clauses.append("c.no_cidadao ILIKE %s")
+        params.append(f"{name_prefix}%")
+    if sex:
+        normalized = _normalize_sex(sex)
+        if not normalized:
+            raise ValueError("Sexo inválido. Use MASCULINO, FEMININO ou INDETERMINADO (ou M/F/I).")
+        clauses.append("c.no_sexo = %s")
+        params.append(normalized)
+    if age_min is not None:
+        clauses.append(f"{_AGE_EXPR} >= %s")
+        params.append(age_min)
+    if age_max is not None:
+        clauses.append(f"{_AGE_EXPR} <= %s")
+        params.append(age_max)
+
+    return ("WHERE " + " AND ".join(clauses)) if clauses else "", params
+
+
+def capturar_paciente(
+    ctx: Context,
+    paciente_id: Optional[int] = None,
+    name_starts_with: Optional[str] = None,
+    sex: Optional[str] = None,
+    age_min: Optional[int] = None,
+    age_max: Optional[int] = None,
+    limite: int = 50,
+) -> List[PatientCaptureResult]:
+    """
+    Retorna dados mínimos de pacientes sem identificadores diretos (somente leitura).
+
+    Exige ao menos um critério (id, prefixo de nome, sexo ou faixa etária) para evitar varreduras amplas.
+    """
+
+    safe_limit = max(1, min(limite, 200))
+    where_clause, params = _build_filters(paciente_id, name_starts_with, sex, age_min, age_max)
+    if not where_clause:
+        raise ValueError("Informe pelo menos um critério (id, prefixo de nome, sexo ou idade).")
+
+    sql = _SQL_BASE.format(where_clause=where_clause)
+    conn = get_db_conn(ctx)
+    rows = query_all(conn, sql, params + [safe_limit])
+
+    results: List[PatientCaptureResult] = []
+    for row in rows:
+        initials = _to_initials(row.get("nome_paciente"))
+        birth_date = to_iso_date(row.get("data_nascimento"))
+        sexo_val = str(row.get("sexo")) if row.get("sexo") is not None else None
+        results.append(
+            PatientCaptureResult(
+                name=initials,
+                birth_date=birth_date,
+                sex=sexo_val,
+                gender=sexo_val,  # Fallback: usar sexo enquanto não houver coluna dedicada de gênero.
+            )
+        )
+    return results
+
+
+__all__ = ["capturar_paciente"]

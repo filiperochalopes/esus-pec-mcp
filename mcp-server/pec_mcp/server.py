@@ -39,17 +39,10 @@ else:
 
 
 # Importações tardias para evitar ciclos antes da instância do MCP existir.
-from .tools.gestantes import listar_gestantes
-from .tools.problemas import listar_problemas_paciente
-from .tools.atendimentos import listar_ultimos_atendimentos_soap
-from .tools.analytics import consulta_epidemiologia, consulta_pessoal
+from .tools.paciente import capturar_paciente
 
 # Registro das tools no MCP.
-mcp.tool()(listar_gestantes)
-mcp.tool()(listar_problemas_paciente)
-mcp.tool()(listar_ultimos_atendimentos_soap)
-mcp.tool()(consulta_epidemiologia)
-mcp.tool()(consulta_pessoal)
+mcp.tool()(capturar_paciente)
 
 
 def main() -> Any:
