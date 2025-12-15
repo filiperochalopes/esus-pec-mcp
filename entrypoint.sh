@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-export PYTHONPATH="$ROOT/mcp-server:$ROOT/mcp-client"
+export PYTHONPATH="$ROOT/mcp-server/src:$ROOT/mcp-client"
 
 UI_PORT="${UI_PORT:-8000}"
 UI_HOST="${UI_HOST:-0.0.0.0}"

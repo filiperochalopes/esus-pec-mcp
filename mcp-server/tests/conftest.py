@@ -9,12 +9,11 @@ from pathlib import Path
 
 import pytest
 
-# Garante que o pacote pec_mcp seja encontrado mesmo após mover o código
-# para a raiz de mcp-server sem depender de PYTHONPATH externo.
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-SERVER_DIR = PROJECT_ROOT / "mcp-server"
-if str(SERVER_DIR) not in sys.path:
-    sys.path.insert(0, str(SERVER_DIR))
+# Garante que o pacote pec_mcp seja encontrado adicionando mcp-server/src ao sys.path.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]  # .../mcp-server
+SERVER_SRC = PROJECT_ROOT / "src"
+if str(SERVER_SRC) not in sys.path:
+    sys.path.insert(0, str(SERVER_SRC))
 
 from pec_mcp.db import get_connection, query_all
 

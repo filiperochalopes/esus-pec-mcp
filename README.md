@@ -19,7 +19,7 @@ Servidor MCP em Python para consultar dados clínicos do PEC. No MVP atual, expo
 
 ## Rodando o servidor MCP
 ```bash
-export PYTHONPATH=mcp-server      # garante resolução do pacote pec_mcp
+export PYTHONPATH=mcp-server/src  # garante resolução do pacote pec_mcp
 export MCP_HTTP_PORT=5174        # porta separada da UI
 export MCP_HTTP_HOST=127.0.0.1
 python -m pec_mcp.server
@@ -28,7 +28,7 @@ python -m pec_mcp.server
 
 ## Rodando a UI FastAPI/Jinja2
 ```bash
-export PYTHONPATH="mcp-server:mcp-client"
+export PYTHONPATH="mcp-server/src:mcp-client"
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload --app-dir mcp-client
 ```
 - Tema escuro, Tailwind+Alpine, painel retrátil para tool calls e engrenagem no topo para ajustar credenciais do banco (persistidas em `.env`).
@@ -45,10 +45,10 @@ chmod +x entrypoint.sh
 
 ## Testes
 ```bash
-export PYTHONPATH=mcp-server
-pytest
+export PYTHONPATH=mcp-server/src
+pytest mcp-server/tests
 ```
-- Para focar na tool de captura anonimizada: `export PYTHONPATH=mcp-server && pytest tests/test_tool_paciente.py`
+ - Para focar na tool de captura anonimizada: `export PYTHONPATH=mcp-server/src && pytest mcp-server/tests/test_tool_paciente.py`
 
 ## Tool disponível (MVP)
 - `capturar_paciente`: recebe filtros (ex.: `paciente_id`, `name_starts_with`, `sex`, `age_min/age_max`) e retorna um registro mínimo sem PII direta:
@@ -58,10 +58,10 @@ pytest
   - `gender`: igual ao sexo por enquanto (fallback até existir coluna dedicada)
 
 ## Estrutura
-- `mcp-server/pec_mcp/`: código-fonte (config, conexão, models, tools e servidor MCP)
+- `mcp-server/src/pec_mcp/`: código-fonte (config, conexão, models, tools e servidor MCP)
+- `mcp-server/tests/`: suíte pytest cobrindo conexão e tools
 - `mcp-client/`: UI FastAPI + Jinja2 + Alpine/Tailwind (tema escuro)
 - `mcp-client-react/`: UI React legada (referência de UX)
-- `tests/`: suíte pytest cobrindo conexão e tools
 - `AGENTS.md`: guia para agentes LLM sobre as capabilities do servidor
 
 ## Convenções de prefixos (schema PEC)

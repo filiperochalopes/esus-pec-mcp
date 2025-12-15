@@ -35,5 +35,5 @@
 - Utilize limites e filtros estritos ao iterar sobre pacientes.
 
 ## Organização e documentação
-- Diretório raiz do servidor MCP: `mcp-server/` (evite `src/` ou `pec_mcp/` adicionais que só adicionem aninhamento).
+- Diretório raiz do servidor MCP: `mcp-server/src/pec_mcp` (adicione `mcp-server/src` ao `PYTHONPATH`).
 - Cada tool deve ter um `README.md` próprio descrevendo tabelas e colunas relevantes acessadas no banco, bem como quaisquer filtros ou guardrails aplicados.
