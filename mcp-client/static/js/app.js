@@ -22,6 +22,51 @@ const readClaudeDefaults = () => {
   }
 }
 
+const linkifyPatientMentions = (html) => {
+  if (!html) return ''
+  const wrapper = document.createElement('div')
+  wrapper.innerHTML = html
+  const regex = /@([0-9]{1,10})/g
+
+  const nodes = []
+  const walker = document.createTreeWalker(wrapper, NodeFilter.SHOW_TEXT)
+  while (walker.nextNode()) {
+    nodes.push(walker.currentNode)
+  }
+
+  nodes.forEach((textNode) => {
+    const parent = textNode.parentElement
+    if (!parent || parent.closest('code, pre')) return
+    const text = textNode.textContent
+    regex.lastIndex = 0
+    let match
+    let lastIndex = 0
+    const frag = document.createDocumentFragment()
+
+    while ((match = regex.exec(text))) {
+      const before = text.slice(lastIndex, match.index)
+      if (before) frag.appendChild(document.createTextNode(before))
+      const patientId = match[1]
+      const tag = document.createElement('span')
+      tag.className = 'patient-mention'
+      tag.dataset.patientId = patientId
+      tag.textContent = `@${patientId}`
+      tag.setAttribute('role', 'button')
+      tag.setAttribute('tabindex', '0')
+      frag.appendChild(tag)
+      lastIndex = match.index + match[0].length
+    }
+
+    const rest = text.slice(lastIndex)
+    if (rest) frag.appendChild(document.createTextNode(rest))
+    if (frag.childNodes.length) {
+      parent.replaceChild(frag, textNode)
+    }
+  })
+
+  return wrapper.innerHTML
+}
+
 const prettyJson = (value) => {
   try {
     return JSON.stringify(value, null, 2)
@@ -48,12 +93,12 @@ const renderMarkdown = (text) => {
       window.marked.setOptions({ gfm: true, breaks: true, headerIds: false, mangle: false })
       window.__markedConfigured = true
     }
-    const html = window.marked.parse(raw)
+    const html = linkifyPatientMentions(window.marked.parse(raw))
     return window.DOMPurify.sanitize(html)
   }
 
   // Fallback: escapa o texto e mantém quebras de linha legíveis.
-  return escapeHtml(raw).replace(/\n/g, '<br />')
+  return linkifyPatientMentions(escapeHtml(raw).replace(/\n/g, '<br />'))
 }
 
 const uid = () => {
@@ -78,7 +123,8 @@ const createMcpConsole = () => ({
   claudeApiKey: readClaudeDefaults().api_key || '',
   claudeModel: readClaudeDefaults().model || 'claude-3-5-sonnet-20241022',
   claudePrompt: '',
-  claudeSystem: 'Você é um agente clínico que usa tools MCP para recuperar dados.',
+  claudeSystem:
+    'Você é um agente clínico que usa tools MCP para recuperar dados. Sempre que responder com pacientes (lista ou item), acrescente ao final de cada linha o identificador real no formato @<paciente_id> usando o co_seq_cidadao devolvido pelas tools. Não invente ids.',
   claudeEvents: [],
   conversationId: uid(),
   claudeBusy: false,
@@ -87,6 +133,11 @@ const createMcpConsole = () => ({
   unidadeSelecionada: 'all',
   unidadesLoading: false,
   unidadesErro: null,
+  patientModalOpen: false,
+  patientLoading: false,
+  patientData: null,
+  patientError: null,
+  patientFocusId: null,
 
   init() {
     this.status = 'connected'
@@ -109,6 +160,25 @@ const createMcpConsole = () => ({
   isCollapsible(event) {
     const type = event?.type
     return ['COMPLETE', 'TOOL_CALL', 'TOOL_RESULT'].includes(type)
+  },
+
+  handleTimelineClick(event) {
+    const target = event?.target?.closest('[data-patient-id]')
+    if (!target) return
+    const patientId = target.dataset.patientId
+    if (!patientId) return
+    event.preventDefault()
+    this.showPatientModal(patientId)
+  },
+
+  handleTimelineKeydown(event) {
+    const target = event?.target?.closest('[data-patient-id]')
+    if (!target) return
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    const patientId = target.dataset.patientId
+    if (!patientId) return
+    event.preventDefault()
+    this.showPatientModal(patientId)
   },
 
   scrollToBottom() {
@@ -242,6 +312,33 @@ const createMcpConsole = () => ({
       this.statusMessage = 'Erro na execução'
     } finally {
       this.claudeBusy = false
+    }
+  },
+
+  closePatientModal() {
+    this.patientModalOpen = false
+    this.patientData = null
+    this.patientError = null
+    this.patientFocusId = null
+  },
+
+  async showPatientModal(patientId) {
+    this.patientModalOpen = true
+    this.patientLoading = true
+    this.patientError = null
+    this.patientData = null
+    this.patientFocusId = patientId
+    try {
+      const res = await fetch(`/api/pacientes/${patientId}`)
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data?.detail || 'Falha ao carregar paciente')
+      }
+      this.patientData = data.paciente
+    } catch (err) {
+      this.patientError = err.message
+    } finally {
+      this.patientLoading = false
     }
   },
 })

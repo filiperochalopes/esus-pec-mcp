@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import date
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -17,7 +18,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
 from config import DbConfig, apply_db_config, load_db_config, persist_db_config
-from pec_mcp.db import get_connection, query_all
+from pec_mcp.db import get_connection, query_all, query_one
 from services.mcp_proxy import call_tool, list_tools
 from services.claude_agent import reset_conversation, run_claude_chat
 
@@ -57,7 +58,12 @@ class ClaudeChatPayload(BaseModel):
     model: str = Field(..., description="Modelo Claude (ex.: claude-3-5-sonnet-20241022)")
     prompt: str = Field(..., description="Mensagem do usuário")
     system_prompt: str = Field(
-        default="Você é um agente clínico que usa tools MCP para recuperar dados.",
+        default=(
+            "Você é um agente clínico que usa tools MCP para recuperar dados. "
+            "Sempre que responder com pacientes (lista ou item), acrescente ao final de cada linha "
+            "o identificador real no formato @<paciente_id> usando o co_seq_cidadao devolvido pelas tools. "
+            "Não invente ids."
+        ),
         description="System prompt a ser passado ao Claude.",
     )
     max_turns: int = Field(default=4, ge=1, le=8, description="Máximo de iterações tool calling.")
@@ -110,6 +116,61 @@ def _load_unidades_saude():
         return result
     finally:
         conn.close()
+
+
+_SQL_PACIENTE_BY_ID = """
+SELECT
+    c.co_seq_cidadao AS paciente_id,
+    c.no_cidadao     AS nome,
+    c.dt_nascimento  AS data_nascimento,
+    c.no_sexo        AS sexo
+FROM tb_cidadao c
+WHERE c.co_seq_cidadao = %s
+LIMIT 1;
+"""
+
+
+def _to_iso_date(value):
+    if value is None:
+        return None
+    try:
+        return value.isoformat()
+    except Exception:
+        return str(value)
+
+
+def _calc_age_years(birth_date) -> Optional[int]:
+    if birth_date is None:
+        return None
+    try:
+        today = date.today()
+        years = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+        return max(years, 0)
+    except Exception:
+        return None
+
+
+def _load_paciente_by_id(paciente_id: int) -> Dict[str, Any]:
+    cfg = load_db_config()
+    apply_db_config(cfg)
+    conn = get_connection()
+    try:
+        row = query_one(conn, _SQL_PACIENTE_BY_ID, [paciente_id])
+    finally:
+        conn.close()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+
+    birth_date = row.get("data_nascimento")
+    birth_iso = _to_iso_date(birth_date)
+    return {
+        "id": int(row["paciente_id"]),
+        "name": row.get("nome"),
+        "sex": row.get("sexo"),
+        "birth_date": birth_iso,
+        "age_years": _calc_age_years(birth_date),
+    }
 
 
 @app.get("/")
@@ -195,6 +256,17 @@ async def api_list_unidades():
     except Exception as exc:  # pragma: no cover - depende do banco
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return {"unidades": unidades}
+
+
+@app.get("/api/pacientes/{paciente_id}")
+async def api_get_paciente(paciente_id: int):
+    try:
+        paciente = await run_in_threadpool(_load_paciente_by_id, paciente_id)
+    except HTTPException:
+        raise
+    except Exception as exc:  # pragma: no cover - depende do banco
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return {"paciente": paciente}
 
 
 __all__ = ["app"]

@@ -50,7 +50,7 @@
           </div>
         </div>
 
-        <div class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 max-h-[480px] overflow-y-auto space-y-4" x-ref="timeline">
+        <div class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 max-h-[480px] overflow-y-auto space-y-4" x-ref="timeline" @click="handleTimelineClick($event)" @keydown="handleTimelineKeydown($event)">
           <template x-if="!claudeEvents.length">
             <p class="text-sm text-slate-400">Envie uma mensagem para iniciar o chat.</p>
           </template>
@@ -150,6 +150,52 @@
           <p class="text-xs text-amber-200" x-show="unidadesErro" x-text="unidadesErro"></p>
         </div>
       </section>
+
+      <template x-if="patientModalOpen">
+        <div class="fixed inset-0 z-30 flex items-center justify-center px-6" role="dialog" aria-modal="true">
+          <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" @click="closePatientModal()"></div>
+          <div class="relative glass w-full max-w-xl rounded-2xl p-6 space-y-5">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-lg font-semibold">
+                  Paciente <span x-text="patientFocusId ? '@' + patientFocusId : ''"></span>
+                </h2>
+                <p class="text-sm text-slate-300">Detalhes obtidos direto da API.</p>
+              </div>
+              <button type="button" class="btn-ghost" @click="closePatientModal()">Fechar</button>
+            </div>
+
+            <template x-if="patientLoading">
+              <p class="text-sm text-slate-300">Carregando paciente...</p>
+            </template>
+
+            <template x-if="patientError">
+              <p class="text-sm text-rose-200" x-text="patientError"></p>
+            </template>
+
+            <template x-if="!patientLoading && patientData">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <p class="text-xs text-slate-400">Nome</p>
+                  <p class="text-base font-semibold" x-text="patientData.name || 'N/A'"></p>
+                </div>
+                <div class="space-y-1">
+                  <p class="text-xs text-slate-400">Sexo</p>
+                  <p class="text-base font-semibold" x-text="patientData.sex || 'N/A'"></p>
+                </div>
+                <div class="space-y-1">
+                  <p class="text-xs text-slate-400">Data de nascimento</p>
+                  <p class="text-base font-semibold" x-text="patientData.birth_date || 'N/A'"></p>
+                </div>
+                <div class="space-y-1">
+                  <p class="text-xs text-slate-400">Idade</p>
+                  <p class="text-base font-semibold" x-text="patientData.age_years != null ? `${patientData.age_years} anos` : 'N/A'"></p>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
 
       <template x-if="configOpen">
         <div class="fixed inset-0 z-30 flex items-center justify-center px-6" role="dialog" aria-modal="true">
