@@ -32,15 +32,25 @@ def contar_pacientes(
     age_min: Optional[int] = None,
     age_max: Optional[int] = None,
     cid_code: Optional[str] = None,
+    cid_codes: Optional[list[str]] = None,
     ciap_code: Optional[str] = None,
     condition_text: Optional[str] = None,
+    cid_logic: str = "OR",
 ) -> CountResult:
     """
     Retorna apenas a contagem de pacientes distintos de acordo com filtros.
     """
 
     patient_clauses, patient_params = build_patient_filters(paciente_id, name_starts_with, sex, age_min, age_max, alias="c")
-    condition_clauses, condition_params = build_condition_filters(cid_code, ciap_code, condition_text)
+    condition_clauses, condition_params = build_condition_filters(
+        cid_code=cid_code,
+        cid_codes=cid_codes,
+        ciap_code=ciap_code,
+        condition_text=condition_text,
+        cid_logic=cid_logic,
+        allow_cid_and=True,
+        patient_alias="c",
+    )
 
     clauses = patient_clauses + condition_clauses
     params = patient_params + condition_params

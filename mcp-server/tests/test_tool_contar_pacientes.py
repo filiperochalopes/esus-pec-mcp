@@ -24,6 +24,17 @@ def test_contar_pacientes_por_cid(ctx):
     assert isinstance(result["count"], int)
 
 
+def test_contar_pacientes_por_lista_cid(ctx):
+    cid_code = _find_any_cid_code(ctx.state["db_conn"])
+    if not cid_code:
+        pytest.skip("Base sem CID-10 para testar")
+
+    result = contar_pacientes(ctx, cid_codes=[cid_code], cid_logic="OR")
+    assert isinstance(result, dict)
+    assert "count" in result
+    assert isinstance(result["count"], int)
+
+
 def test_contar_pacientes_sem_filtro(ctx):
     with pytest.raises(ValueError):
         contar_pacientes(ctx)

@@ -37,6 +37,8 @@
   - `sex` (str, MASCULINO/FEMININO/INDETERMINADO; aceita M/F/I)
   - `age_min` / `age_max` (int, faixa etária em anos)
   - `cid_code` (str, código ou prefixo CID-10, ex.: "I10" ou "I10%")
+  - `cid_codes` (lista de códigos/prefixos CID-10; combinados via `cid_logic`, default OR)
+  - `cid_logic` (OR para múltiplos códigos; AND não é suportado na listagem)
   - `ciap_code` (str, código ou prefixo CIAP)
   - `condition_text` (str, trecho textual na descrição da condição/observação)
   - `limite` (int, default 50, máx 200)
@@ -56,10 +58,10 @@
   - "Liste até 10 condições de pacientes cujo nome começa com J e idade mínima de 50 anos."
 
 ### contar_pacientes
-- Descrição: retorna apenas `{ \"count\": int }` com `COUNT(DISTINCT paciente_id)` aplicando filtros.
+- Descrição: retorna apenas `{ "count": int }` com `COUNT(DISTINCT paciente_id)` aplicando filtros.
 - Parâmetros (informe pelo menos um critério de paciente ou condição):
   - `paciente_id`, `name_starts_with`, `sex`, `age_min`, `age_max`
-  - `cid_code`, `ciap_code`, `condition_text`
+  - `cid_code`, `cid_codes` (lista), `cid_logic` (OR/AND), `ciap_code`, `condition_text`
 - Saída (`CountResult`):
   - `count`: número de pacientes distintos que atendem aos filtros
 - Guardrails:

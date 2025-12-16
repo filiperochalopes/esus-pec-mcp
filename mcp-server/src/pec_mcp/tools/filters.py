@@ -4,7 +4,7 @@ Helpers de filtros compartilhados entre tools de paciente/condições.
 
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 # Expressão de idade parametrizada pelo alias da tabela de cidadão.
 _AGE_EXPR_TEMPLATE = "DATE_PART('year', AGE(CURRENT_DATE, {alias}.dt_nascimento))"
@@ -83,8 +83,12 @@ def _normalize_code_prefix(code: Optional[str]) -> Optional[str]:
 
 def build_condition_filters(
     cid_code: Optional[str],
+    cid_codes: Optional[Sequence[str]],
     ciap_code: Optional[str],
     condition_text: Optional[str],
+    cid_logic: str = "OR",
+    allow_cid_and: bool = False,
+    patient_alias: str = "c",
 ) -> Tuple[List[str], List]:
     """
     Monta cláusulas e parâmetros de filtros de condição (CID/CIAP/texto).
@@ -93,10 +97,34 @@ def build_condition_filters(
     clauses: List[str] = []
     params: List = []
 
-    cid_like = _normalize_code_prefix(cid_code)
-    if cid_like:
-        clauses.append("cid.nu_cid10 ILIKE %s")
-        params.append(cid_like)
+    cid_patterns: List[str] = []
+    if cid_code:
+        cid_patterns.append(_normalize_code_prefix(cid_code))
+    if cid_codes:
+        cid_patterns.extend([_normalize_code_prefix(code) for code in cid_codes if code])
+    cid_patterns = [pat for pat in cid_patterns if pat]
+
+    cid_logic_upper = cid_logic.upper() if cid_logic else "OR"
+    if cid_patterns:
+        if cid_logic_upper not in {"OR", "AND"}:
+            raise ValueError("cid_logic deve ser OR ou AND.")
+
+        if cid_logic_upper == "AND" and not allow_cid_and and len(cid_patterns) > 1:
+            raise ValueError("cid_logic=AND não é suportado aqui; use OR para múltiplos CID-10.")
+
+        if cid_logic_upper == "AND" and len(cid_patterns) > 1:
+            # Cada pattern deve existir para o paciente.
+            for pat in cid_patterns:
+                clauses.append(
+                    "EXISTS (SELECT 1 FROM tb_problema p2 "
+                    "JOIN tb_prontuario pr2 ON pr2.co_seq_prontuario = p2.co_prontuario "
+                    "LEFT JOIN tb_cid10 cid2 ON cid2.co_cid10 = p2.co_cid10 "
+                    f"WHERE pr2.co_cidadao = {patient_alias}.co_seq_cidadao AND cid2.nu_cid10 ILIKE %s)"
+                )
+                params.append(pat)
+        else:
+            clauses.append("cid.nu_cid10 ILIKE ANY(%s)")
+            params.append(cid_patterns)
 
     ciap_like = _normalize_code_prefix(ciap_code)
     if ciap_like:

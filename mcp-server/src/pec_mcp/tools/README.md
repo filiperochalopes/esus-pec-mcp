@@ -40,7 +40,8 @@
   - `name_starts_with` (prefixo de nome, ILIKE)
   - `sex` (MASCULINO/FEMININO/INDETERMINADO ou aliases M/F/I)
   - `age_min` / `age_max` (anos, via `DATE_PART('year', AGE(...))`)
-  - `cid_code` (código/prefixo CID-10, ILIKE)
+  - `cid_code` (código/prefixo CID-10, ILIKE) ou `cid_codes` (lista; combinados com `cid_logic`, default OR)
+  - `cid_logic` (OR para múltiplos códigos; AND não é suportado na listagem)
   - `ciap_code` (código/prefixo CIAP, ILIKE)
   - `condition_text` (trecho textual nas descrições CID/CIAP ou observação)
   - `limite` (1–200; default 50)
@@ -56,7 +57,7 @@
 - **Tabelas/colunas relevantes**: mesmas de `listar_condicoes`, mas usa `COUNT(DISTINCT c.co_seq_cidadao)`; só faz JOIN em `tb_problema`/`tb_cid10`/`tb_ciap` se filtros de condição forem informados.
 - **Filtros suportados** (ao menos um é obrigatório):
   - Paciente: `paciente_id`, `name_starts_with`, `sex`, `age_min`, `age_max`
-  - Condição: `cid_code`, `ciap_code`, `condition_text` (ILIKE em descrições/observações)
+  - Condição: `cid_code`, `cid_codes` (lista), `cid_logic` (OR/AND), `ciap_code`, `condition_text` (ILIKE em descrições/observações)
 - **Guardrails**:
   - Exige pelo menos um filtro para evitar contagens amplas sem contexto.
   - Valida faixa etária (age_min <= age_max) e tamanho de `condition_text` (máx 100 chars).

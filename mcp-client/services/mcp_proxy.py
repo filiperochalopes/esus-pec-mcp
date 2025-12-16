@@ -80,6 +80,17 @@ TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
                 "age_min": {"type": "integer", "description": "Idade mínima em anos."},
                 "age_max": {"type": "integer", "description": "Idade máxima em anos."},
                 "cid_code": {"type": "string", "description": "Código ou prefixo CID-10 (ex.: 'E11' ou 'E11%')."},
+                "cid_codes": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Lista de códigos/prefixos CID-10; combinados com cid_logic (OR por padrão).",
+                },
+                "cid_logic": {
+                    "type": "string",
+                    "enum": ["OR", "AND"],
+                    "default": "OR",
+                    "description": "Combina múltiplos CID-10 com OR (default). AND não é suportado para listagem com múltiplos códigos.",
+                },
                 "ciap_code": {"type": "string", "description": "Código ou prefixo CIAP."},
                 "condition_text": {"type": "string", "description": "Trecho textual para buscar em descrições/observações."},
                 "limite": {
@@ -105,6 +116,17 @@ TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
                 "age_min": {"type": "integer", "description": "Idade mínima em anos."},
                 "age_max": {"type": "integer", "description": "Idade máxima em anos."},
                 "cid_code": {"type": "string", "description": "Código ou prefixo CID-10."},
+                "cid_codes": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Lista de códigos/prefixos CID-10; combinados via cid_logic (OR/AND).",
+                },
+                "cid_logic": {
+                    "type": "string",
+                    "enum": ["OR", "AND"],
+                    "default": "OR",
+                    "description": "Combina múltiplos CID-10 com OR (default) ou AND (paciente deve ter todos os códigos).",
+                },
                 "ciap_code": {"type": "string", "description": "Código ou prefixo CIAP."},
                 "condition_text": {"type": "string", "description": "Trecho textual para descrições/observações."},
             },
