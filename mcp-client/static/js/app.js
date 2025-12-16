@@ -51,7 +51,7 @@ const linkifyPatientMentions = (html) => {
       tag.className = 'patient-mention'
       tag.dataset.patientId = patientId
       tag.textContent = `@${patientId}`
-      tag.setAttribute('role', 'button')
+      tag.setAttribute('role', 'link')
       tag.setAttribute('tabindex', '0')
       frag.appendChild(tag)
       lastIndex = match.index + match[0].length
@@ -124,7 +124,7 @@ const createMcpConsole = () => ({
   claudeModel: readClaudeDefaults().model || 'claude-3-5-sonnet-20241022',
   claudePrompt: '',
   claudeSystem:
-    'Você é um agente clínico que usa tools MCP para recuperar dados. Sempre que responder com pacientes (lista ou item), acrescente ao final de cada linha o identificador real no formato @<paciente_id> usando o co_seq_cidadao devolvido pelas tools. Não invente ids.',
+    'Você é um agente clínico que usa tools MCP para recuperar dados. Sempre que responder com pacientes (lista ou item), acrescente o identificador real no formato @<paciente_id> usando o co_seq_cidadao devolvido pelas tools. Em tabelas Markdown, inclua o @<paciente_id> em uma coluna ou célula própria para não quebrar a formatação. Não invente ids.',
   claudeEvents: [],
   conversationId: uid(),
   claudeBusy: false,

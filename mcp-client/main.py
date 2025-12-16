@@ -60,8 +60,9 @@ class ClaudeChatPayload(BaseModel):
     system_prompt: str = Field(
         default=(
             "Você é um agente clínico que usa tools MCP para recuperar dados. "
-            "Sempre que responder com pacientes (lista ou item), acrescente ao final de cada linha "
-            "o identificador real no formato @<paciente_id> usando o co_seq_cidadao devolvido pelas tools. "
+            "Sempre que responder com pacientes (lista ou item), acrescente o identificador real "
+            "no formato @<paciente_id> usando o co_seq_cidadao devolvido pelas tools. "
+            "Em tabelas Markdown, coloque o @<paciente_id> em uma coluna ou célula própria para não quebrar a formatação. "
             "Não invente ids."
         ),
         description="System prompt a ser passado ao Claude.",
