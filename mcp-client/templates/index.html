@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b1220" />
   <title>PEC MCP • Console</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.10/dist/tailwind.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/css/styles.css" />
   <script id="initial-config" type="application/json">{{ initial_config_json | safe }}</script>
   <script id="claude-defaults" type="application/json">{{ claude_defaults | tojson | safe }}</script>
@@ -14,7 +14,7 @@
   <div class="relative min-h-screen overflow-hidden">
     <div class="hero-shape"></div>
 
-    <main class="max-w-5xl mx-auto px-6 py-8" x-data="mcpConsole()" x-cloak>
+    <main class="max-w-5xl mx-auto px-6 py-8" x-data="mcpConsole" x-cloak>
       <header class="flex items-center justify-between gap-4">
         <div class="space-y-2">
           <div class="inline-flex items-center gap-2 rounded-full bg-slate-900/70 px-3 py-2 border border-slate-800">
@@ -26,11 +26,10 @@
             <p class="text-sm text-slate-300">Chat direto com o servidor MCP via StdIO. Tema dark azul.</p>
           </div>
         </div>
-        <button type="button" class="btn-ghost h-12 w-12 flex items-center justify-center" @click="configOpen = true" :aria-pressed="configOpen">
+        <button type="button" class="btn-ghost h-12 w-12 flex items-center justify-center text-slate-100" @click="configOpen = true" :aria-pressed="configOpen">
           <span class="sr-only">Configurações</span>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M11.983 4.517a1 1 0 0 1 .934 0l1.43.745a1 1 0 0 0 .9 0l1.43-.745a1 1 0 0 1 1.451 1.054l-.273 1.6a1 1 0 0 0 .288.885l1.157 1.087a1 1 0 0 1-.56 1.707l-1.582.23a1 1 0 0 0-.75.547l-.707 1.443a1 1 0 0 1-1.794 0l-.708-1.443a1 1 0 0 0-.749-.547l-1.582-.23a1 1 0 0 1-.56-1.707l1.157-1.087a1 1 0 0 0 .288-.885l-.273-1.6a1 1 0 0 1 1.054-1.176z" />
-            <circle cx="12" cy="12" r="2" />
+          <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6">
+            <path fill="currentColor" d="M12 21a8.985 8.985 0 0 1-1.755-.173 1 1 0 0 1-.791-.813l-.273-1.606a6.933 6.933 0 0 1-1.32-.762l-1.527.566a1 1 0 0 1-1.1-.278 8.977 8.977 0 0 1-1.756-3.041 1 1 0 0 1 .31-1.092l1.254-1.04a6.979 6.979 0 0 1 0-1.524L3.787 10.2a1 1 0 0 1-.31-1.092 8.977 8.977 0 0 1 1.756-3.042 1 1 0 0 1 1.1-.278l1.527.566a6.933 6.933 0 0 1 1.32-.762l.274-1.606a1 1 0 0 1 .791-.813 8.957 8.957 0 0 1 3.51 0 1 1 0 0 1 .791.813l.273 1.606a6.933 6.933 0 0 1 1.32.762l1.527-.566a1 1 0 0 1 1.1.278 8.977 8.977 0 0 1 1.756 3.041 1 1 0 0 1-.31 1.092l-1.254 1.04a6.979 6.979 0 0 1 0 1.524l1.254 1.04a1 1 0 0 1 .31 1.092 8.977 8.977 0 0 1-1.756 3.041 1 1 0 0 1-1.1.278l-1.527-.566a6.933 6.933 0 0 1-1.32.762l-.273 1.606a1 1 0 0 1-.791.813A8.985 8.985 0 0 1 12 21zm-.7-2.035a6.913 6.913 0 0 0 1.393 0l.247-1.451a1 1 0 0 1 .664-.779 4.974 4.974 0 0 0 1.696-.975 1 1 0 0 1 1.008-.186l1.381.512a7.012 7.012 0 0 0 .7-1.206l-1.133-.939a1 1 0 0 1-.343-.964 5.018 5.018 0 0 0 0-1.953 1 1 0 0 1 .343-.964l1.124-.94a7.012 7.012 0 0 0-.7-1.206l-1.38.512a1 1 0 0 1-1-.186 4.974 4.974 0 0 0-1.688-.976 1 1 0 0 1-.664-.779l-.248-1.45a6.913 6.913 0 0 0-1.393 0l-.25 1.45a1 1 0 0 1-.664.779A4.974 4.974 0 0 0 8.7 8.24a1 1 0 0 1-1 .186l-1.385-.512a7.012 7.012 0 0 0-.7 1.206l1.133.939a1 1 0 0 1 .343.964 5.018 5.018 0 0 0 0 1.953 1 1 0 0 1-.343.964l-1.128.94a7.012 7.012 0 0 0 .7 1.206l1.38-.512a1 1 0 0 1 1 .186 4.974 4.974 0 0 0 1.688.976 1 1 0 0 1 .664.779zm.7-3.725a3.24 3.24 0 0 1 0-6.48 3.24 3.24 0 0 1 0 6.48zm0-4.48A1.24 1.24 0 1 0 13.24 12 1.244 1.244 0 0 0 12 10.76z"/>
           </svg>
         </button>
       </header>
@@ -84,7 +83,7 @@
               <span x-show="!claudeBusy">Enviar</span>
               <span x-show="claudeBusy" class="flex items-center gap-2">
                 <span class="h-2 w-2 rounded-full bg-slate-100 animate-ping"></span>
-                Processando...
+                Enviando...
               </span>
             </button>
             <p class="text-sm text-rose-200" x-show="claudeError" x-text="claudeError"></p>
@@ -153,7 +152,7 @@
     </main>
   </div>
 
-  <script src="https://unpkg.com/alpinejs@3.14.0/dist/cdn.min.js" defer></script>
   <script src="/static/js/app.js" defer></script>
+  <script src="https://unpkg.com/alpinejs@3.14.0/dist/cdn.min.js" defer></script>
 </body>
 </html>
