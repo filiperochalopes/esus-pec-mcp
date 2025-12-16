@@ -50,12 +50,14 @@ pytest mcp-server/tests
 ```
  - Para focar na tool de captura anonimizada: `export PYTHONPATH=mcp-server/src && pytest mcp-server/tests/test_tool_paciente.py`
 
-## Tool disponível (MVP)
+## Tools disponíveis (MVP)
 - `capturar_paciente`: recebe filtros (ex.: `paciente_id`, `name_starts_with`, `sex`, `age_min/age_max`) e retorna um registro mínimo sem PII direta:
   - `name`: iniciais do nome completo (ex.: \"Joao de Carvalho Lima\" -> \"JCL\")
   - `birth_date`: data de nascimento (YYYY-MM-DD)
   - `sex`: sexo (coluna `no_sexo`, valores típicos: MASCULINO/FEMININO/INDETERMINADO; aceita aliases M/F/I)
   - `gender`: igual ao sexo por enquanto (fallback até existir coluna dedicada)
+- `listar_condicoes`: lista condições (CID/CIAP) de pacientes, exigindo ao menos um filtro (paciente, nome, sexo, faixa etária ou filtros de condição) e limite máximo de 200 registros; inclui iniciais, datas e última evolução.
+- `contar_pacientes`: retorna apenas `{ "count": int }` com `COUNT(DISTINCT paciente_id)` aplicando filtros de paciente e/ou condição (CID/CIAP/texto); exige pelo menos um critério.
 
 ## Estrutura
 - `mcp-server/src/pec_mcp/`: código-fonte (config, conexão, models, tools e servidor MCP)

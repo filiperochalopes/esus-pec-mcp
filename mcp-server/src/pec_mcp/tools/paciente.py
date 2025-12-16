@@ -12,8 +12,7 @@ from mcp.server.fastmcp import Context
 from ..db import query_all
 from ..models import PatientCaptureResult
 from . import get_db_conn, to_iso_date
-
-_AGE_EXPR = "DATE_PART('year', AGE(CURRENT_DATE, c.dt_nascimento))"
+from .filters import build_patient_filters
 
 _SQL_BASE = """
 SELECT
@@ -40,57 +39,6 @@ def _to_initials(full_name: Optional[str]) -> str:
     return "".join(initials) if initials else "N/A"
 
 
-def _normalize_sex(sex: Optional[str]) -> Optional[str]:
-    """
-    Normaliza sexo para valores do banco (MASCULINO, FEMININO, INDETERMINADO).
-    """
-
-    if sex is None:
-        return None
-    value = str(sex).strip().upper()
-    aliases = {
-        "M": "MASCULINO",
-        "F": "FEMININO",
-        "I": "INDETERMINADO",
-        "MASCULINO": "MASCULINO",
-        "FEMININO": "FEMININO",
-        "INDETERMINADO": "INDETERMINADO",
-    }
-    return aliases.get(value)
-
-
-def _build_filters(
-    paciente_id: Optional[int],
-    name_prefix: Optional[str],
-    sex: Optional[str],
-    age_min: Optional[int],
-    age_max: Optional[int],
-) -> tuple[str, list]:
-    clauses: list[str] = []
-    params: list = []
-
-    if paciente_id is not None:
-        clauses.append("c.co_seq_cidadao = %s")
-        params.append(paciente_id)
-    if name_prefix:
-        clauses.append("c.no_cidadao ILIKE %s")
-        params.append(f"{name_prefix}%")
-    if sex:
-        normalized = _normalize_sex(sex)
-        if not normalized:
-            raise ValueError("Sexo inválido. Use MASCULINO, FEMININO ou INDETERMINADO (ou M/F/I).")
-        clauses.append("c.no_sexo = %s")
-        params.append(normalized)
-    if age_min is not None:
-        clauses.append(f"{_AGE_EXPR} >= %s")
-        params.append(age_min)
-    if age_max is not None:
-        clauses.append(f"{_AGE_EXPR} <= %s")
-        params.append(age_max)
-
-    return ("WHERE " + " AND ".join(clauses)) if clauses else "", params
-
-
 def capturar_paciente(
     ctx: Context,
     paciente_id: Optional[int] = None,
@@ -107,10 +55,11 @@ def capturar_paciente(
     """
 
     safe_limit = max(1, min(limite, 200))
-    where_clause, params = _build_filters(paciente_id, name_starts_with, sex, age_min, age_max)
-    if not where_clause:
+    clauses, params = build_patient_filters(paciente_id, name_starts_with, sex, age_min, age_max, alias="c")
+    if not clauses:
         raise ValueError("Informe pelo menos um critério (id, prefixo de nome, sexo ou idade).")
 
+    where_clause = "WHERE " + " AND ".join(clauses)
     sql = _SQL_BASE.format(where_clause=where_clause)
     conn = get_db_conn(ctx)
     rows = query_all(conn, sql, params + [safe_limit])

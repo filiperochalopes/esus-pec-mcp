@@ -22,4 +22,24 @@ class PatientCaptureResult(TypedDict):
     gender: Optional[str]
 
 
-__all__ = ["PatientCaptureResult"]
+class ConditionResult(TypedDict):
+    paciente_id: int
+    paciente_initials: str
+    birth_date: Optional[str]
+    sex: Optional[str]
+    condition_id: int
+    cid_code: Optional[str]
+    cid_description: Optional[str]
+    ciap_code: Optional[str]
+    ciap_description: Optional[str]
+    dt_inicio_condicao: Optional[str]
+    dt_fim_condicao: Optional[str]
+    situacao_id: Optional[str]
+    observacao: Optional[str]
+
+
+class CountResult(TypedDict):
+    count: int
+
+
+__all__ = ["PatientCaptureResult", "ConditionResult", "CountResult"]

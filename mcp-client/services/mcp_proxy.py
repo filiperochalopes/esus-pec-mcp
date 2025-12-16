@@ -17,6 +17,8 @@ from fastapi.encoders import jsonable_encoder
 from config import apply_db_config, load_db_config
 from pec_mcp.db import get_connection
 from pec_mcp.tools.paciente import capturar_paciente
+from pec_mcp.tools.condicoes import listar_condicoes
+from pec_mcp.tools.contar_pacientes import contar_pacientes
 
 
 class _Ctx:
@@ -65,7 +67,50 @@ TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
             },
             "required": [],
         },
-    }
+    },
+    "listar_condicoes": {
+        "func": listar_condicoes,
+        "description": "Lista condições de saúde (CID/CIAP) com iniciais e dados mínimos do paciente; exige pelo menos um filtro.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "paciente_id": {"type": "integer", "description": "Identificador interno do paciente (co_seq_cidadao)."},
+                "name_starts_with": {"type": "string", "description": "Prefixo do nome (ex.: 'A')."},
+                "sex": {"type": "string", "description": "Sexo (MASCULINO/FEMININO/INDETERMINADO ou M/F/I)."},
+                "age_min": {"type": "integer", "description": "Idade mínima em anos."},
+                "age_max": {"type": "integer", "description": "Idade máxima em anos."},
+                "cid_code": {"type": "string", "description": "Código ou prefixo CID-10 (ex.: 'E11' ou 'E11%')."},
+                "ciap_code": {"type": "string", "description": "Código ou prefixo CIAP."},
+                "condition_text": {"type": "string", "description": "Trecho textual para buscar em descrições/observações."},
+                "limite": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 200,
+                    "default": 50,
+                    "description": "Quantidade máxima de registros (1-200).",
+                },
+            },
+            "required": [],
+        },
+    },
+    "contar_pacientes": {
+        "func": contar_pacientes,
+        "description": "Retorna apenas {count} de pacientes distintos aplicando filtros de paciente e/ou condição; exige ao menos um critério.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "paciente_id": {"type": "integer", "description": "Identificador interno do paciente (co_seq_cidadao)."},
+                "name_starts_with": {"type": "string", "description": "Prefixo do nome (ex.: 'A')."},
+                "sex": {"type": "string", "description": "Sexo (MASCULINO/FEMININO/INDETERMINADO ou M/F/I)."},
+                "age_min": {"type": "integer", "description": "Idade mínima em anos."},
+                "age_max": {"type": "integer", "description": "Idade máxima em anos."},
+                "cid_code": {"type": "string", "description": "Código ou prefixo CID-10."},
+                "ciap_code": {"type": "string", "description": "Código ou prefixo CIAP."},
+                "condition_text": {"type": "string", "description": "Trecho textual para descrições/observações."},
+            },
+            "required": [],
+        },
+    },
 }
 
 
