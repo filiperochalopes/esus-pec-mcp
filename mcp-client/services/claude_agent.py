@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any, Dict, List, Tuple
+from threading import Lock
+from typing import Any, Dict, List, Optional, Tuple
 
 from anthropic import Anthropic
-from anthropic.types import Message, MessageParam
+from anthropic.types import Message, MessageParam, ToolResultBlockParam
 
 from .mcp_proxy import call_tool, list_tools
 
@@ -74,6 +75,28 @@ def _tool_result_blocks(tool_uses: List[Any], results: List[Dict[str, Any]]) -> 
     return blocks
 
 
+_conversation_lock = Lock()
+_conversations: Dict[str, List[MessageParam]] = {}
+
+
+def _load_conversation(conversation_id: str) -> List[MessageParam]:
+    with _conversation_lock:
+        stored = _conversations.get(conversation_id, [])
+        return list(stored)
+
+
+def _persist_conversation(conversation_id: str, messages: List[MessageParam]) -> None:
+    with _conversation_lock:
+        _conversations[conversation_id] = list(messages)
+
+
+def reset_conversation(conversation_id: str) -> None:
+    if not conversation_id:
+        return
+    with _conversation_lock:
+        _conversations.pop(conversation_id, None)
+
+
 def run_claude_chat(
     api_key: str,
     model: str,
@@ -81,11 +104,13 @@ def run_claude_chat(
     system_prompt: str,
     max_turns: int = 4,
     tool_alias: str = "server",
-) -> List[Dict[str, Any]]:
+    conversation_id: Optional[str] = None,
+) -> Tuple[str, List[Dict[str, Any]]]:
     """
     Executa o laço Claude + MCP tools e devolve a linha do tempo de eventos.
     """
 
+    conv_id = conversation_id or _random_id()
     events: List[Dict[str, Any]] = []
 
     def emit(event: Dict[str, Any]):
@@ -96,9 +121,8 @@ def run_claude_chat(
     mcp_tools = list_tools()
     anthropic_tools, name_map = _to_anthropic_tools(tool_alias or "server", mcp_tools)
 
-    messages: List[MessageParam] = [
-        {"role": "user", "content": [{"type": "text", "text": prompt}]}
-    ]
+    messages: List[MessageParam] = _load_conversation(conv_id)
+    messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
 
     emit({"id": _random_id(), "type": "USER_MESSAGE", "text": prompt, "timestamp": _now_iso()})
 
@@ -163,7 +187,8 @@ def run_claude_chat(
         messages.append({"role": "user", "content": _tool_result_blocks(tool_use_blocks, tool_results)})
 
     emit({"id": _random_id(), "type": "COMPLETE", "timestamp": _now_iso(), "text": "Chat completed"})
-    return events
+    _persist_conversation(conv_id, messages)
+    return conv_id, events
 
 
-__all__ = ["run_claude_chat"]
+__all__ = ["run_claude_chat", "reset_conversation"]

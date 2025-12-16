@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 
 from config import DbConfig, apply_db_config, load_db_config, persist_db_config
 from services.mcp_proxy import call_tool, list_tools
-from services.claude_agent import run_claude_chat
+from services.claude_agent import reset_conversation, run_claude_chat
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -61,6 +61,11 @@ class ClaudeChatPayload(BaseModel):
     )
     max_turns: int = Field(default=4, ge=1, le=8, description="Máximo de iterações tool calling.")
     tool_alias: str = Field(default="server", description="Prefixo de alias para as tools MCP.")
+    conversation_id: Optional[str] = Field(default=None, description="ID da conversa em memória.")
+
+
+class ClaudeResetPayload(BaseModel):
+    conversation_id: str = Field(..., description="ID da conversa para limpar")
 
 
 @app.get("/health")
@@ -123,7 +128,7 @@ async def api_call_tool(payload: ToolCallPayload):
 @app.post("/api/claude/chat")
 async def api_claude_chat(payload: ClaudeChatPayload):
     try:
-        events = await run_in_threadpool(
+        conversation_id, events = await run_in_threadpool(
             run_claude_chat,
             payload.api_key,
             payload.model,
@@ -131,10 +136,17 @@ async def api_claude_chat(payload: ClaudeChatPayload):
             payload.system_prompt,
             payload.max_turns,
             payload.tool_alias,
+            payload.conversation_id,
         )
     except Exception as exc:  # pragma: no cover - dependente do cliente Anthropic
         raise HTTPException(status_code=500, detail=str(exc)) from exc
-    return {"events": events}
+    return {"conversation_id": conversation_id, "events": events}
+
+
+@app.post("/api/claude/reset")
+async def api_claude_reset(payload: ClaudeResetPayload):
+    reset_conversation(payload.conversation_id)
+    return {"ok": True}
 
 
 __all__ = ["app"]

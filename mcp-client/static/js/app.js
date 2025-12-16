@@ -80,6 +80,7 @@ const createMcpConsole = () => ({
   claudePrompt: '',
   claudeSystem: 'Você é um agente clínico que usa tools MCP para recuperar dados.',
   claudeEvents: [],
+  conversationId: uid(),
   claudeBusy: false,
   claudeError: null,
 
@@ -98,6 +99,38 @@ const createMcpConsole = () => ({
 
   renderMarkdown(text) {
     return renderMarkdown(text)
+  },
+
+  isCollapsible(event) {
+    const type = event?.type
+    return ['COMPLETE', 'TOOL_CALL', 'TOOL_RESULT'].includes(type)
+  },
+
+  scrollToBottom() {
+    const box = this.$refs?.timeline
+    if (!box) return
+    box.scrollTop = box.scrollHeight
+  },
+
+  async newConversation() {
+    const previousId = this.conversationId
+    this.conversationId = uid()
+    this.claudeEvents = []
+    this.claudePrompt = ''
+    this.claudeError = null
+    this.status = 'connected'
+    this.statusMessage = 'Nova conversa iniciada'
+
+    if (!previousId) return
+    try {
+      await fetch('/api/claude/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversation_id: previousId }),
+      })
+    } catch (err) {
+      console.warn('Não foi possível limpar a conversa anterior', err)
+    }
   },
 
   async saveConfig() {
@@ -135,17 +168,10 @@ const createMcpConsole = () => ({
       return
     }
 
+    const prompt = this.claudePrompt.trim()
     this.claudeBusy = true
     this.status = 'connecting'
     this.statusMessage = 'Chamando Claude...'
-    this.claudeEvents = [
-      {
-        id: uid(),
-        type: 'USER_MESSAGE',
-        text: this.claudePrompt,
-        timestamp: new Date().toISOString(),
-      },
-    ]
 
     try {
       const res = await fetch('/api/claude/chat', {
@@ -154,19 +180,27 @@ const createMcpConsole = () => ({
         body: JSON.stringify({
           api_key: this.claudeApiKey,
           model: this.claudeModel,
-          prompt: this.claudePrompt,
+          prompt,
           system_prompt: this.claudeSystem,
           max_turns: 4,
           tool_alias: 'pec',
+          conversation_id: this.conversationId,
         }),
       })
       const data = await res.json()
       if (!res.ok) {
         throw new Error(data?.detail || 'Falha ao executar o chat')
       }
-      this.claudeEvents = data.events || []
+      if (data.conversation_id) {
+        this.conversationId = data.conversation_id
+      }
+      if (Array.isArray(data.events)) {
+        this.claudeEvents = [...this.claudeEvents, ...data.events]
+        this.$nextTick(() => this.scrollToBottom())
+      }
       this.status = 'connected'
       this.statusMessage = 'Resposta recebida'
+      this.claudePrompt = ''
     } catch (err) {
       this.claudeError = err.message
       this.status = 'error'

@@ -42,39 +42,82 @@
             <h2 class="text-lg font-semibold">Chat Claude + MCP</h2>
             <p class="text-sm text-slate-300">Mensagens e tool calling aparecem na linha do tempo.</p>
           </div>
-          <span class="badge">Tema dark · Azul</span>
+          <div class="flex items-center gap-3">
+            <button type="button" class="btn-ghost px-4" @click="newConversation()" :disabled="claudeBusy">
+              Nova Conversa
+            </button>
+            <span class="badge">Tema dark · Azul</span>
+          </div>
         </div>
 
-        <div class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 max-h-[480px] overflow-y-auto space-y-4">
+        <div class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 max-h-[480px] overflow-y-auto space-y-4" x-ref="timeline">
           <template x-if="!claudeEvents.length">
             <p class="text-sm text-slate-400">Envie uma mensagem para iniciar o chat.</p>
           </template>
           <template x-for="event in claudeEvents" :key="event.id">
             <article class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-3">
-              <div class="flex items-center justify-between text-xs text-slate-400">
-                <span class="chip">
-                  <span class="h-2 w-2 rounded-full" :class="event.type === 'USER_MESSAGE' ? 'bg-sky-400' : event.type === 'MODEL_MESSAGE' ? 'bg-emerald-400' : event.type === 'TOOL_CALL' ? 'bg-amber-400' : event.type === 'TOOL_RESULT' ? 'bg-indigo-300' : 'bg-slate-400'"></span>
-                  <span x-text="event.type"></span>
-                </span>
-                <span x-text="formatTs(event.timestamp || event.ts || new Date())"></span>
-              </div>
-              <template x-if="event.text && event.type !== 'MODEL_MESSAGE'">
-                <p class="text-sm leading-relaxed text-slate-100" x-text="event.text"></p>
+              <template x-if="isCollapsible(event)">
+                <details class="space-y-3">
+                  <summary class="flex items-center justify-between text-xs text-slate-400 cursor-pointer">
+                    <div class="flex items-center gap-2">
+                      <span class="chip">
+                        <span class="h-2 w-2 rounded-full" :class="event.type === 'USER_MESSAGE' ? 'bg-sky-400' : event.type === 'MODEL_MESSAGE' ? 'bg-emerald-400' : event.type === 'TOOL_CALL' ? 'bg-amber-400' : event.type === 'TOOL_RESULT' ? 'bg-indigo-300' : event.type === 'COMPLETE' ? 'bg-emerald-200' : 'bg-slate-400'"></span>
+                        <span x-text="event.type"></span>
+                      </span>
+                      <span class="text-[11px] text-slate-500">Clique para expandir</span>
+                    </div>
+                    <span x-text="formatTs(event.timestamp || event.ts || new Date())"></span>
+                  </summary>
+                  <div class="space-y-3 pt-1">
+                    <template x-if="event.text && event.type !== 'MODEL_MESSAGE'">
+                      <p class="text-sm leading-relaxed text-slate-100" x-text="event.text"></p>
+                    </template>
+                    <template x-if="event.text && event.type === 'MODEL_MESSAGE'">
+                      <div class="markdown-body" x-html="renderMarkdown(event.text)"></div>
+                    </template>
+                    <template x-if="event.tool_name">
+                      <p class="text-sm text-slate-200">Tool: <span class="font-semibold" x-text="event.tool_name"></span></p>
+                    </template>
+                    <template x-if="event.tool_input">
+                      <pre class="code-block" x-text="formatJson(event.tool_input)"></pre>
+                    </template>
+                    <template x-if="event.tool_output">
+                      <pre class="code-block" x-text="formatJson(event.tool_output)"></pre>
+                    </template>
+                    <template x-if="event.duration_ms">
+                      <p class="text-xs text-slate-400" x-text="`Duração: ${event.duration_ms} ms`"></p>
+                    </template>
+                  </div>
+                </details>
               </template>
-              <template x-if="event.text && event.type === 'MODEL_MESSAGE'">
-                <div class="markdown-body" x-html="renderMarkdown(event.text)"></div>
-              </template>
-              <template x-if="event.tool_name">
-                <p class="text-sm text-slate-200">Tool: <span class="font-semibold" x-text="event.tool_name"></span></p>
-              </template>
-              <template x-if="event.tool_input">
-                <pre class="code-block" x-text="formatJson(event.tool_input)"></pre>
-              </template>
-              <template x-if="event.tool_output">
-                <pre class="code-block" x-text="formatJson(event.tool_output)"></pre>
-              </template>
-              <template x-if="event.duration_ms">
-                <p class="text-xs text-slate-400" x-text="`Duração: ${event.duration_ms} ms`"></p>
+              <template x-if="!isCollapsible(event)">
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span class="chip">
+                      <span class="h-2 w-2 rounded-full" :class="event.type === 'USER_MESSAGE' ? 'bg-sky-400' : event.type === 'MODEL_MESSAGE' ? 'bg-emerald-400' : event.type === 'TOOL_CALL' ? 'bg-amber-400' : event.type === 'TOOL_RESULT' ? 'bg-indigo-300' : event.type === 'COMPLETE' ? 'bg-emerald-200' : 'bg-slate-400'"></span>
+                      <span x-text="event.type"></span>
+                    </span>
+                    <span x-text="formatTs(event.timestamp || event.ts || new Date())"></span>
+                  </div>
+                  <template x-if="event.text && event.type !== 'MODEL_MESSAGE'">
+                    <p class="text-sm leading-relaxed text-slate-100" x-text="event.text"></p>
+                  </template>
+                  <template x-if="event.text && event.type === 'MODEL_MESSAGE'">
+                    <div class="markdown-body" x-html="renderMarkdown(event.text)"></div>
+                  </template>
+                  <template x-if="event.tool_name">
+                    <p class="text-sm text-slate-200">Tool: <span class="font-semibold" x-text="event.tool_name"></span></p>
+                  </template>
+                  <template x-if="event.tool_input">
+                    <pre class="code-block" x-text="formatJson(event.tool_input)"></pre>
+                  </template>
+                  <template x-if="event.tool_output">
+                    <pre class="code-block" x-text="formatJson(event.tool_output)"></pre>
+                  </template>
+                  <template x-if="event.duration_ms">
+                    <p class="text-xs text-slate-400" x-text="`Duração: ${event.duration_ms} ms`"></p>
+                  </template>
+                </div>
               </template>
             </article>
           </template>

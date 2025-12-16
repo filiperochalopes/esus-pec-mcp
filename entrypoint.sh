@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 export PYTHONPATH="$ROOT/mcp-server/src:$ROOT/mcp-client"
 
-UI_PORT="${UI_PORT:-8000}"
+UI_PORT="${UI_PORT:-8001}"
 UI_HOST="${UI_HOST:-0.0.0.0}"
 MCP_CMD="${MCP_CMD:-python -m pec_mcp.server}"
 export MCP_HTTP_PORT="${MCP_HTTP_PORT:-5174}"
