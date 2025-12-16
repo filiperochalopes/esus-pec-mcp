@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="/static/css/styles.css" />
   <script id="initial-config" type="application/json">{{ initial_config_json | safe }}</script>
   <script id="claude-defaults" type="application/json">{{ claude_defaults | tojson | safe }}</script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" defer></script>
 </head>
 <body class="bg-slate-950 text-slate-100">
   <div class="relative min-h-screen overflow-hidden">
@@ -56,8 +58,11 @@
                 </span>
                 <span x-text="formatTs(event.timestamp || event.ts || new Date())"></span>
               </div>
-              <template x-if="event.text">
+              <template x-if="event.text && event.type !== 'MODEL_MESSAGE'">
                 <p class="text-sm leading-relaxed text-slate-100" x-text="event.text"></p>
+              </template>
+              <template x-if="event.text && event.type === 'MODEL_MESSAGE'">
+                <div class="markdown-body" x-html="renderMarkdown(event.text)"></div>
               </template>
               <template x-if="event.tool_name">
                 <p class="text-sm text-slate-200">Tool: <span class="font-semibold" x-text="event.tool_name"></span></p>

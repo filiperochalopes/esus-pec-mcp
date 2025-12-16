@@ -111,3 +111,55 @@ body {
   opacity: 0.55;
   pointer-events: none;
 }
+
+.markdown-body {
+  color: #e5e7eb;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+.markdown-body p {
+  margin: 0 0 0.35rem 0;
+}
+
+.markdown-body pre {
+  background: rgba(10, 14, 26, 0.9);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  overflow: auto;
+}
+
+.markdown-body code {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 13px;
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+  border: 1px solid var(--border);
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.markdown-body thead th {
+  background: rgba(73, 143, 255, 0.1);
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0.35rem 0 0.35rem 1.2rem;
+  padding-left: 1rem;
+}

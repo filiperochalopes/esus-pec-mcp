@@ -72,9 +72,11 @@ async def health() -> Dict[str, str]:
 async def index(request: Request):
     cfg = load_db_config()
     initial_config_json = json.dumps(cfg.as_dict())
+    model_env = os.getenv("ANTHROPIC_MODEL") or os.getenv("CLAUDE_MODEL")
     claude_defaults = {
         "api_key": os.getenv("ANTHROPIC_API_KEY", ""),
-        "model": os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022"),
+        # Usa ANTHROPIC_MODEL (ou CLAUDE_MODEL por compat) e cai em sonnet padrão.
+        "model": model_env or "claude-3-5-sonnet-20241022",
     }
     return templates.TemplateResponse(
         "index.html",

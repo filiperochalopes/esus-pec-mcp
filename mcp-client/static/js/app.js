@@ -30,6 +30,32 @@ const prettyJson = (value) => {
   }
 }
 
+const renderMarkdown = (text) => {
+  if (!text) return ''
+  const raw = String(text)
+
+  const escapeHtml = (value) =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+
+  if (window.marked && window.DOMPurify) {
+    // Configura GFM para tabelas, quebra de linha e desativa headers ids/mangle.
+    if (!window.__markedConfigured) {
+      window.marked.setOptions({ gfm: true, breaks: true, headerIds: false, mangle: false })
+      window.__markedConfigured = true
+    }
+    const html = window.marked.parse(raw)
+    return window.DOMPurify.sanitize(html)
+  }
+
+  // Fallback: escapa o texto e mantém quebras de linha legíveis.
+  return escapeHtml(raw).replace(/\n/g, '<br />')
+}
+
 const uid = () => {
   if (crypto?.randomUUID) return crypto.randomUUID()
   return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`
@@ -68,6 +94,10 @@ const createMcpConsole = () => ({
 
   formatJson(value) {
     return prettyJson(value)
+  },
+
+  renderMarkdown(text) {
+    return renderMarkdown(text)
   },
 
   async saveConfig() {

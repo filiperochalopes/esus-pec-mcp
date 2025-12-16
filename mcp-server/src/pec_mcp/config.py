@@ -18,7 +18,8 @@ except ImportError:  # pragma: no cover - fallback simples caso não instalado
 
 # Carrega .env se a lib estiver disponível. Isso é idempotente.
 if load_dotenv is not None:
-    load_dotenv()
+    # override=True garante que ajustes no .env substituam env pré-existentes no dev local.
+    load_dotenv(override=True)
 
 # Defaults para exploração inicial. Em produção, sobrescrever via env.
 _DEFAULT_HOST: Final[str] = "localhost"
