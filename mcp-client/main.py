@@ -17,6 +17,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
 from config import DbConfig, apply_db_config, load_db_config, persist_db_config
+from pec_mcp.db import get_connection, query_all
 from services.mcp_proxy import call_tool, list_tools
 from services.claude_agent import reset_conversation, run_claude_chat
 
@@ -71,6 +72,44 @@ class ClaudeResetPayload(BaseModel):
 @app.get("/health")
 async def health() -> Dict[str, str]:
     return {"status": "ok"}
+
+
+_SQL_UNIDADES = """
+SELECT
+    us.co_seq_unidade_saude   AS unidade_id,
+    us.nu_cnes                AS cnes,
+    us.no_unidade_saude       AS nome,
+    us.co_localidade_endereco AS localidade_id,
+    us.st_ativo               AS ativo
+FROM tb_unidade_saude us
+ORDER BY us.no_unidade_saude;
+"""
+
+
+def _load_unidades_saude():
+    """
+    Busca unidades direto no banco, sem passar pelo MCP/tool calling.
+    """
+
+    cfg = load_db_config()
+    apply_db_config(cfg)
+    conn = get_connection()
+    try:
+        rows = query_all(conn, _SQL_UNIDADES)
+        result = []
+        for row in rows:
+            result.append(
+                {
+                    "unidade_id": int(row["unidade_id"]),
+                    "cnes": row.get("cnes"),
+                    "name": row.get("nome"),
+                    "localidade_id": int(row["localidade_id"]) if row.get("localidade_id") is not None else None,
+                    "is_active": bool(row.get("ativo")),
+                }
+            )
+        return result
+    finally:
+        conn.close()
 
 
 @app.get("/")
@@ -147,6 +186,15 @@ async def api_claude_chat(payload: ClaudeChatPayload):
 async def api_claude_reset(payload: ClaudeResetPayload):
     reset_conversation(payload.conversation_id)
     return {"ok": True}
+
+
+@app.get("/api/unidades")
+async def api_list_unidades():
+    try:
+        unidades = await run_in_threadpool(_load_unidades_saude)
+    except Exception as exc:  # pragma: no cover - depende do banco
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return {"unidades": unidades}
 
 
 __all__ = ["app"]

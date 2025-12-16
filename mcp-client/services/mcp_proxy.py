@@ -19,6 +19,7 @@ from pec_mcp.db import get_connection
 from pec_mcp.tools.paciente import capturar_paciente
 from pec_mcp.tools.condicoes import listar_condicoes
 from pec_mcp.tools.contar_pacientes import contar_pacientes
+from pec_mcp.tools.unidades import listar_unidades_saude
 
 
 class _Ctx:
@@ -57,6 +58,10 @@ TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
                     "type": "integer",
                     "description": "Idade máxima (anos).",
                 },
+                "unidade_saude_id": {
+                    "type": "integer",
+                    "description": "Filtra pacientes com atendimento/vínculo na unidade (co_seq_unidade_saude).",
+                },
                 "limite": {
                     "type": "integer",
                     "minimum": 1,
@@ -79,6 +84,10 @@ TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
                 "sex": {"type": "string", "description": "Sexo (MASCULINO/FEMININO/INDETERMINADO ou M/F/I)."},
                 "age_min": {"type": "integer", "description": "Idade mínima em anos."},
                 "age_max": {"type": "integer", "description": "Idade máxima em anos."},
+                "unidade_saude_id": {
+                    "type": "integer",
+                    "description": "Filtra pacientes/condições por unidade (co_seq_unidade_saude).",
+                },
                 "cid_code": {"type": "string", "description": "Código ou prefixo CID-10 (ex.: 'E11' ou 'E11%')."},
                 "cid_codes": {
                     "type": "array",
@@ -115,6 +124,10 @@ TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
                 "sex": {"type": "string", "description": "Sexo (MASCULINO/FEMININO/INDETERMINADO ou M/F/I)."},
                 "age_min": {"type": "integer", "description": "Idade mínima em anos."},
                 "age_max": {"type": "integer", "description": "Idade máxima em anos."},
+                "unidade_saude_id": {
+                    "type": "integer",
+                    "description": "Filtra pacientes por unidade (co_seq_unidade_saude).",
+                },
                 "cid_code": {"type": "string", "description": "Código ou prefixo CID-10."},
                 "cid_codes": {
                     "type": "array",
@@ -132,6 +145,11 @@ TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
             },
             "required": [],
         },
+    },
+    "listar_unidades_saude": {
+        "func": listar_unidades_saude,
+        "description": "Lista todas as unidades de saúde (co_seq_unidade_saude, CNES e nome) para uso em filtros.",
+        "input_schema": {"type": "object", "properties": {}},
     },
 }
 

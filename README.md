@@ -56,8 +56,10 @@ pytest mcp-server/tests
   - `birth_date`: data de nascimento (YYYY-MM-DD)
   - `sex`: sexo (coluna `no_sexo`, valores típicos: MASCULINO/FEMININO/INDETERMINADO; aceita aliases M/F/I)
   - `gender`: igual ao sexo por enquanto (fallback até existir coluna dedicada)
-- `listar_condicoes`: lista condições (CID/CIAP) de pacientes, exigindo ao menos um filtro (paciente, nome, sexo, faixa etária ou filtros de condição) e limite máximo de 200 registros; inclui iniciais, datas e última evolução.
-- `contar_pacientes`: retorna apenas `{ "count": int }` com `COUNT(DISTINCT paciente_id)` aplicando filtros de paciente e/ou condição (CID/CIAP/texto); exige pelo menos um critério.
+  - aceita `unidade_saude_id` opcional (filtra pacientes com atendimento ou vínculo CNES na unidade)
+- `listar_condicoes`: lista condições (CID/CIAP) de pacientes, exigindo ao menos um filtro (paciente, nome, sexo, faixa etária ou filtros de condição) e limite máximo de 200 registros; aceita filtro opcional `unidade_saude_id`.
+- `contar_pacientes`: retorna apenas `{ "count": int }` com `COUNT(DISTINCT paciente_id)` aplicando filtros de paciente e/ou condição (CID/CIAP/texto); exige pelo menos um critério; aceita filtro opcional `unidade_saude_id`.
+- `listar_unidades_saude`: devolve todas as unidades (`co_seq_unidade_saude`, CNES, nome) para popular selects de filtro.
 
 ## Estrutura
 - `mcp-server/src/pec_mcp/`: código-fonte (config, conexão, models, tools e servidor MCP)

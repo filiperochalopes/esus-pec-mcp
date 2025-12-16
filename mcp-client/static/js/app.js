@@ -83,10 +83,15 @@ const createMcpConsole = () => ({
   conversationId: uid(),
   claudeBusy: false,
   claudeError: null,
+  unidades: [],
+  unidadeSelecionada: 'all',
+  unidadesLoading: false,
+  unidadesErro: null,
 
   init() {
     this.status = 'connected'
     this.statusMessage = 'Chat pronto'
+    this.loadUnidades()
   },
 
   formatTs(ts) {
@@ -133,6 +138,23 @@ const createMcpConsole = () => ({
     }
   },
 
+  async loadUnidades() {
+    this.unidadesErro = null
+    this.unidadesLoading = true
+    try {
+      const res = await fetch('/api/unidades')
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data?.detail || 'Falha ao carregar unidades')
+      }
+      this.unidades = Array.isArray(data.unidades) ? data.unidades : []
+    } catch (err) {
+      this.unidadesErro = err.message
+    } finally {
+      this.unidadesLoading = false
+    }
+  },
+
   async saveConfig() {
     this.configError = null
     this.savingConfig = true
@@ -168,7 +190,20 @@ const createMcpConsole = () => ({
       return
     }
 
-    const prompt = this.claudePrompt.trim()
+    const promptBase = this.claudePrompt.trim()
+    let prompt = promptBase
+
+    if (this.unidadeSelecionada && this.unidadeSelecionada !== 'all') {
+      const selected = this.unidades.find(
+        (u) => String(u.unidade_id) === String(this.unidadeSelecionada)
+      )
+      const unitId = selected?.unidade_id || this.unidadeSelecionada
+      const unitLabelParts = [`ID ${unitId}`]
+      if (selected?.cnes) unitLabelParts.push(`CNES ${selected.cnes}`)
+      const unitLabel = `${selected?.name || 'Unidade selecionada'} (${unitLabelParts.join(', ')})`
+      prompt = `${promptBase}\n\n[Filtro de unidade selecionado: ${unitLabel}. Ao chamar tools, use unidade_saude_id=${unitId}.]`
+    }
+
     this.claudeBusy = true
     this.status = 'connecting'
     this.statusMessage = 'Chamando Claude...'

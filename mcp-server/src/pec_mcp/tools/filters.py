@@ -36,6 +36,7 @@ def build_patient_filters(
     sex: Optional[str],
     age_min: Optional[int],
     age_max: Optional[int],
+    unidade_saude_id: Optional[int] = None,
     alias: str = "c",
 ) -> Tuple[List[str], List]:
     """
@@ -68,6 +69,27 @@ def build_patient_filters(
     if age_max is not None:
         clauses.append(f"{age_expr} <= %s")
         params.append(age_max)
+    if unidade_saude_id is not None:
+        unit_id = int(unidade_saude_id)
+        if unit_id <= 0:
+            raise ValueError("unidade_saude_id deve ser um inteiro positivo.")
+        clauses.append(
+            "("
+            "EXISTS ("
+            "SELECT 1 FROM tb_prontuario pr2 "
+            "JOIN tb_atend a ON a.co_prontuario = pr2.co_seq_prontuario "
+            f"WHERE pr2.co_cidadao = {alias}.co_seq_cidadao AND a.co_unidade_saude = %s"
+            ") "
+            "OR EXISTS ("
+            "SELECT 1 FROM tb_cidadao_vinculacao_equipe ve "
+            "JOIN tb_unidade_saude us ON us.nu_cnes = ve.nu_cnes "
+            f"WHERE ve.co_cidadao = {alias}.co_seq_cidadao "
+            "AND ve.nu_cnes IS NOT NULL AND ve.nu_cnes <> '' "
+            "AND us.co_seq_unidade_saude = %s"
+            ")"
+            ")"
+        )
+        params.extend([unit_id, unit_id])
 
     return clauses, params
 

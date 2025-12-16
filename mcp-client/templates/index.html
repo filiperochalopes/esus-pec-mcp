@@ -126,16 +126,28 @@
         <div class="space-y-3">
           <label class="text-sm text-slate-300" for="prompt">Mensagem</label>
           <textarea id="prompt" class="input min-h-[104px]" x-model="claudePrompt" placeholder="Pergunte algo e acompanhe os tool calls do Claude" @keydown.enter.meta.prevent="runClaude()" @keydown.enter.ctrl.prevent="runClaude()"></textarea>
-          <div class="flex items-center gap-3">
-            <button type="button" class="btn-primary" @click="runClaude()" :disabled="claudeBusy">
-              <span x-show="!claudeBusy">Enviar</span>
-              <span x-show="claudeBusy" class="flex items-center gap-2">
-                <span class="h-2 w-2 rounded-full bg-slate-100 animate-ping"></span>
-                Enviando...
-              </span>
-            </button>
-            <p class="text-sm text-rose-200" x-show="claudeError" x-text="claudeError"></p>
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-center gap-2 sm:gap-3">
+              <label class="text-sm text-slate-300">Unidade</label>
+              <select class="input w-full sm:w-72" x-model="unidadeSelecionada" :disabled="unidadesLoading">
+                <option value="all">Todas as unidades</option>
+                <template x-for="unit in unidades" :key="unit.unidade_id">
+                  <option :value="unit.unidade_id" x-text="`${unit.name || 'Unidade'} (ID ${unit.unidade_id}${unit.cnes ? ', CNES ' + unit.cnes : ''})`"></option>
+                </template>
+              </select>
+            </div>
+            <div class="flex items-center gap-3">
+              <button type="button" class="btn-primary" @click="runClaude()" :disabled="claudeBusy">
+                <span x-show="!claudeBusy">Enviar</span>
+                <span x-show="claudeBusy" class="flex items-center gap-2">
+                  <span class="h-2 w-2 rounded-full bg-slate-100 animate-ping"></span>
+                  Enviando...
+                </span>
+              </button>
+              <p class="text-sm text-rose-200" x-show="claudeError" x-text="claudeError"></p>
+            </div>
           </div>
+          <p class="text-xs text-amber-200" x-show="unidadesErro" x-text="unidadesErro"></p>
         </div>
       </section>
 

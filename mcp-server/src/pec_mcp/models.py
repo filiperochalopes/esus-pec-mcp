@@ -42,4 +42,12 @@ class CountResult(TypedDict):
     count: int
 
 
-__all__ = ["PatientCaptureResult", "ConditionResult", "CountResult"]
+class HealthUnitResult(TypedDict):
+    unidade_id: int
+    cnes: Optional[str]
+    name: Optional[str]
+    localidade_id: Optional[int]
+    is_active: bool
+
+
+__all__ = ["PatientCaptureResult", "ConditionResult", "CountResult", "HealthUnitResult"]

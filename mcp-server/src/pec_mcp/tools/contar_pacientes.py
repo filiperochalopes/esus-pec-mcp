@@ -31,6 +31,7 @@ def contar_pacientes(
     sex: Optional[str] = None,
     age_min: Optional[int] = None,
     age_max: Optional[int] = None,
+    unidade_saude_id: Optional[int] = None,
     cid_code: Optional[str] = None,
     cid_codes: Optional[list[str]] = None,
     ciap_code: Optional[str] = None,
@@ -39,9 +40,18 @@ def contar_pacientes(
 ) -> CountResult:
     """
     Retorna apenas a contagem de pacientes distintos de acordo com filtros.
+    Aceita filtro opcional de unidade de saúde (atendimento ou vinculação por CNES).
     """
 
-    patient_clauses, patient_params = build_patient_filters(paciente_id, name_starts_with, sex, age_min, age_max, alias="c")
+    patient_clauses, patient_params = build_patient_filters(
+        paciente_id,
+        name_starts_with,
+        sex,
+        age_min,
+        age_max,
+        unidade_saude_id=unidade_saude_id,
+        alias="c",
+    )
     condition_clauses, condition_params = build_condition_filters(
         cid_code=cid_code,
         cid_codes=cid_codes,

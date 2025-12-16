@@ -46,16 +46,26 @@ def capturar_paciente(
     sex: Optional[str] = None,
     age_min: Optional[int] = None,
     age_max: Optional[int] = None,
+    unidade_saude_id: Optional[int] = None,
     limite: int = 50,
 ) -> List[PatientCaptureResult]:
     """
     Retorna dados mínimos de pacientes sem identificadores diretos (somente leitura).
 
     Exige ao menos um critério (id, prefixo de nome, sexo ou faixa etária) para evitar varreduras amplas.
+    Aceita filtro opcional de unidade de saúde (atendimento ou vinculação por CNES).
     """
 
     safe_limit = max(1, min(limite, 200))
-    clauses, params = build_patient_filters(paciente_id, name_starts_with, sex, age_min, age_max, alias="c")
+    clauses, params = build_patient_filters(
+        paciente_id,
+        name_starts_with,
+        sex,
+        age_min,
+        age_max,
+        unidade_saude_id=unidade_saude_id,
+        alias="c",
+    )
     if not clauses:
         raise ValueError("Informe pelo menos um critério (id, prefixo de nome, sexo ou idade).")
 
