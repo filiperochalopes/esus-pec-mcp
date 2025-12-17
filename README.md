@@ -1,6 +1,11 @@
 # PEC MCP (MVP)
 
-Servidor MCP em Python para consultar dados clínicos do PEC. No MVP atual, expomos apenas uma ferramenta focada em captura anonimizada de paciente (iniciais, data de nascimento, sexo e gênero).
+Profissional assistência (Médico, Enfermagem) Capture sumários rápidos sobre o quadro de um paciente de forma completa: dados e condições de saúde com a segurança de dados anonimizados. Criador pelo médico engenheiro de Software e consultor PEC [Dr. Filipe Lopes](https://link.orango.io/Gq7N8).
+Gestor: Obtenha dados de gestão e epidemiologia na distancia de uma pergunta e até mesmo dados e métricas relacionados ao modelo de coparticipação Saúde 360 com componente de busca ativa.
+
+## Gostaria de saber sua opnião
+
+O que você queria que essa aplicação tivesse? [Faça suas perguntas aqui](https://wa.me/5571992518950&text=Ol%C3%A1%2C%20%C3%A9%20sobre%20o%20projeto%20PEC%20MCP)
 
 ## Requisitos
 - Python 3.11+
