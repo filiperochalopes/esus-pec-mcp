@@ -6,6 +6,14 @@ Servidor MCP em Python para consultar dados clínicos do PEC. No MVP atual, expo
 - Python 3.11+
 - Acesso de leitura ao PostgreSQL do PEC.
 
+## Segurança e Privacidade
+
+Esse MCP busca anonimizar dados antes de tornar legível para a LM, criando um canal de seguranca e privacidade para os dados do cidadão.
+
+> ! Importante
+Essa aplcação é um MVP, tem rotas de API expostas e não possui autenticação. Certifique-se de utilizar em um ambiente seguro por critérios de rede ou BasicAuth no mínimo via proxy nginx.
+
+
 ## Configuração
 1. Crie um virtualenv (opcional) e instale dependências:
    ```bash

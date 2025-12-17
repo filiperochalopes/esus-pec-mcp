@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,6 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" defer></script>
 </head>
+
 <body class="bg-slate-950 text-slate-100">
   <div class="relative min-h-screen overflow-hidden">
     <div class="hero-shape"></div>
@@ -25,18 +27,22 @@
             <img src="/static/img/pec-mcp-logo.svg" alt="PEC MCP" class="h-10 w-10" />
             <div>
               <h1 class="text-2xl font-semibold tracking-tight">PEC MCP · Console</h1>
-              <p class="text-sm text-slate-300">Chat direto com o servidor MCP via StdIO. Tema dark azul.</p>
+              <p class="text-sm text-slate-300">Converse com os dados de seus pacientes e tenha insights relevantes para
+                assistência e gestão</p>
             </div>
           </div>
           <div class="inline-flex items-center gap-2 rounded-full bg-slate-900/70 px-3 py-2 border border-slate-800">
-            <span class="h-2 w-2 rounded-full" :class="status === 'connected' ? 'bg-emerald-400' : status === 'error' ? 'bg-rose-400' : 'bg-amber-300'"></span>
+            <span class="h-2 w-2 rounded-full"
+              :class="status === 'connected' ? 'bg-emerald-400' : status === 'error' ? 'bg-rose-400' : 'bg-amber-300'"></span>
             <span class="text-sm" x-text="statusMessage"></span>
           </div>
         </div>
-        <button type="button" class="btn-ghost h-12 w-12 flex items-center justify-center text-slate-100" @click="configOpen = true" :aria-pressed="configOpen">
+        <button type="button" class="btn-ghost h-12 w-12 flex items-center justify-center text-slate-100"
+          @click="configOpen = true" :aria-pressed="configOpen">
           <span class="sr-only">Configurações</span>
           <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6">
-            <path fill="currentColor" d="M12 21a8.985 8.985 0 0 1-1.755-.173 1 1 0 0 1-.791-.813l-.273-1.606a6.933 6.933 0 0 1-1.32-.762l-1.527.566a1 1 0 0 1-1.1-.278 8.977 8.977 0 0 1-1.756-3.041 1 1 0 0 1 .31-1.092l1.254-1.04a6.979 6.979 0 0 1 0-1.524L3.787 10.2a1 1 0 0 1-.31-1.092 8.977 8.977 0 0 1 1.756-3.042 1 1 0 0 1 1.1-.278l1.527.566a6.933 6.933 0 0 1 1.32-.762l.274-1.606a1 1 0 0 1 .791-.813 8.957 8.957 0 0 1 3.51 0 1 1 0 0 1 .791.813l.273 1.606a6.933 6.933 0 0 1 1.32.762l1.527-.566a1 1 0 0 1 1.1.278 8.977 8.977 0 0 1 1.756 3.041 1 1 0 0 1-.31 1.092l-1.254 1.04a6.979 6.979 0 0 1 0 1.524l1.254 1.04a1 1 0 0 1 .31 1.092 8.977 8.977 0 0 1-1.756 3.041 1 1 0 0 1-1.1.278l-1.527-.566a6.933 6.933 0 0 1-1.32.762l-.273 1.606a1 1 0 0 1-.791.813A8.985 8.985 0 0 1 12 21zm-.7-2.035a6.913 6.913 0 0 0 1.393 0l.247-1.451a1 1 0 0 1 .664-.779 4.974 4.974 0 0 0 1.696-.975 1 1 0 0 1 1.008-.186l1.381.512a7.012 7.012 0 0 0 .7-1.206l-1.133-.939a1 1 0 0 1-.343-.964 5.018 5.018 0 0 0 0-1.953 1 1 0 0 1 .343-.964l1.124-.94a7.012 7.012 0 0 0-.7-1.206l-1.38.512a1 1 0 0 1-1-.186 4.974 4.974 0 0 0-1.688-.976 1 1 0 0 1-.664-.779l-.248-1.45a6.913 6.913 0 0 0-1.393 0l-.25 1.45a1 1 0 0 1-.664.779A4.974 4.974 0 0 0 8.7 8.24a1 1 0 0 1-1 .186l-1.385-.512a7.012 7.012 0 0 0-.7 1.206l1.133.939a1 1 0 0 1 .343.964 5.018 5.018 0 0 0 0 1.953 1 1 0 0 1-.343.964l-1.128.94a7.012 7.012 0 0 0 .7 1.206l1.38-.512a1 1 0 0 1 1 .186 4.974 4.974 0 0 0 1.688.976 1 1 0 0 1 .664.779zm.7-3.725a3.24 3.24 0 0 1 0-6.48 3.24 3.24 0 0 1 0 6.48zm0-4.48A1.24 1.24 0 1 0 13.24 12 1.244 1.244 0 0 0 12 10.76z"/>
+            <path fill="currentColor"
+              d="M12 21a8.985 8.985 0 0 1-1.755-.173 1 1 0 0 1-.791-.813l-.273-1.606a6.933 6.933 0 0 1-1.32-.762l-1.527.566a1 1 0 0 1-1.1-.278 8.977 8.977 0 0 1-1.756-3.041 1 1 0 0 1 .31-1.092l1.254-1.04a6.979 6.979 0 0 1 0-1.524L3.787 10.2a1 1 0 0 1-.31-1.092 8.977 8.977 0 0 1 1.756-3.042 1 1 0 0 1 1.1-.278l1.527.566a6.933 6.933 0 0 1 1.32-.762l.274-1.606a1 1 0 0 1 .791-.813 8.957 8.957 0 0 1 3.51 0 1 1 0 0 1 .791.813l.273 1.606a6.933 6.933 0 0 1 1.32.762l1.527-.566a1 1 0 0 1 1.1.278 8.977 8.977 0 0 1 1.756 3.041 1 1 0 0 1-.31 1.092l-1.254 1.04a6.979 6.979 0 0 1 0 1.524l1.254 1.04a1 1 0 0 1 .31 1.092 8.977 8.977 0 0 1-1.756 3.041 1 1 0 0 1-1.1.278l-1.527-.566a6.933 6.933 0 0 1-1.32.762l-.273 1.606a1 1 0 0 1-.791.813A8.985 8.985 0 0 1 12 21zm-.7-2.035a6.913 6.913 0 0 0 1.393 0l.247-1.451a1 1 0 0 1 .664-.779 4.974 4.974 0 0 0 1.696-.975 1 1 0 0 1 1.008-.186l1.381.512a7.012 7.012 0 0 0 .7-1.206l-1.133-.939a1 1 0 0 1-.343-.964 5.018 5.018 0 0 0 0-1.953 1 1 0 0 1 .343-.964l1.124-.94a7.012 7.012 0 0 0-.7-1.206l-1.38.512a1 1 0 0 1-1-.186 4.974 4.974 0 0 0-1.688-.976 1 1 0 0 1-.664-.779l-.248-1.45a6.913 6.913 0 0 0-1.393 0l-.25 1.45a1 1 0 0 1-.664.779A4.974 4.974 0 0 0 8.7 8.24a1 1 0 0 1-1 .186l-1.385-.512a7.012 7.012 0 0 0-.7 1.206l1.133.939a1 1 0 0 1 .343.964 5.018 5.018 0 0 0 0 1.953 1 1 0 0 1-.343.964l-1.128.94a7.012 7.012 0 0 0 .7 1.206l1.38-.512a1 1 0 0 1 1 .186 4.974 4.974 0 0 0 1.688.976 1 1 0 0 1 .664.779zm.7-3.725a3.24 3.24 0 0 1 0-6.48 3.24 3.24 0 0 1 0 6.48zm0-4.48A1.24 1.24 0 1 0 13.24 12 1.244 1.244 0 0 0 12 10.76z" />
           </svg>
         </button>
       </header>
@@ -51,11 +57,11 @@
             <button type="button" class="btn-ghost px-4" @click="newConversation()" :disabled="claudeBusy">
               Nova Conversa
             </button>
-            <span class="badge">Tema dark · Azul</span>
           </div>
         </div>
 
-        <div class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 max-h-[480px] overflow-y-auto space-y-4" x-ref="timeline" @click="handleTimelineClick($event)" @keydown="handleTimelineKeydown($event)">
+        <div class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 max-h-[480px] overflow-y-auto space-y-4"
+          x-ref="timeline" @click="handleTimelineClick($event)" @keydown="handleTimelineKeydown($event)">
           <template x-if="!claudeEvents.length">
             <p class="text-sm text-slate-400">Envie uma mensagem para iniciar o chat.</p>
           </template>
@@ -66,7 +72,8 @@
                   <summary class="flex items-center justify-between text-xs text-slate-400 cursor-pointer">
                     <div class="flex items-center gap-2">
                       <span class="chip">
-                        <span class="h-2 w-2 rounded-full" :class="event.type === 'USER_MESSAGE' ? 'bg-sky-400' : event.type === 'MODEL_MESSAGE' ? 'bg-emerald-400' : event.type === 'TOOL_CALL' ? 'bg-amber-400' : event.type === 'TOOL_RESULT' ? 'bg-indigo-300' : event.type === 'COMPLETE' ? 'bg-emerald-200' : 'bg-slate-400'"></span>
+                        <span class="h-2 w-2 rounded-full"
+                          :class="event.type === 'USER_MESSAGE' ? 'bg-sky-400' : event.type === 'MODEL_MESSAGE' ? 'bg-emerald-400' : event.type === 'TOOL_CALL' ? 'bg-amber-400' : event.type === 'TOOL_RESULT' ? 'bg-indigo-300' : event.type === 'COMPLETE' ? 'bg-emerald-200' : 'bg-slate-400'"></span>
                         <span x-text="event.type"></span>
                       </span>
                       <span class="text-[11px] text-slate-500">Clique para expandir</span>
@@ -81,7 +88,8 @@
                       <div class="markdown-body" x-html="renderMarkdown(event.text)"></div>
                     </template>
                     <template x-if="event.tool_name">
-                      <p class="text-sm text-slate-200">Tool: <span class="font-semibold" x-text="event.tool_name"></span></p>
+                      <p class="text-sm text-slate-200">Tool: <span class="font-semibold"
+                          x-text="event.tool_name"></span></p>
                     </template>
                     <template x-if="event.tool_input">
                       <pre class="code-block" x-text="formatJson(event.tool_input)"></pre>
@@ -99,7 +107,8 @@
                 <div class="space-y-3">
                   <div class="flex items-center justify-between text-xs text-slate-400">
                     <span class="chip">
-                      <span class="h-2 w-2 rounded-full" :class="event.type === 'USER_MESSAGE' ? 'bg-sky-400' : event.type === 'MODEL_MESSAGE' ? 'bg-emerald-400' : event.type === 'TOOL_CALL' ? 'bg-amber-400' : event.type === 'TOOL_RESULT' ? 'bg-indigo-300' : event.type === 'COMPLETE' ? 'bg-emerald-200' : 'bg-slate-400'"></span>
+                      <span class="h-2 w-2 rounded-full"
+                        :class="event.type === 'USER_MESSAGE' ? 'bg-sky-400' : event.type === 'MODEL_MESSAGE' ? 'bg-emerald-400' : event.type === 'TOOL_CALL' ? 'bg-amber-400' : event.type === 'TOOL_RESULT' ? 'bg-indigo-300' : event.type === 'COMPLETE' ? 'bg-emerald-200' : 'bg-slate-400'"></span>
                       <span x-text="event.type"></span>
                     </span>
                     <span x-text="formatTs(event.timestamp || event.ts || new Date())"></span>
@@ -111,7 +120,8 @@
                     <div class="markdown-body" x-html="renderMarkdown(event.text)"></div>
                   </template>
                   <template x-if="event.tool_name">
-                    <p class="text-sm text-slate-200">Tool: <span class="font-semibold" x-text="event.tool_name"></span></p>
+                    <p class="text-sm text-slate-200">Tool: <span class="font-semibold" x-text="event.tool_name"></span>
+                    </p>
                   </template>
                   <template x-if="event.tool_input">
                     <pre class="code-block" x-text="formatJson(event.tool_input)"></pre>
@@ -131,33 +141,23 @@
         <div class="space-y-3">
           <label class="text-sm text-slate-300" for="prompt">Mensagem</label>
           <div class="relative">
-            <textarea
-              id="prompt"
-              class="input min-h-[104px]"
-              x-model="claudePrompt"
-              placeholder="Pergunte algo e acompanhe os tool calls do Claude"
-              @keydown.enter.meta.prevent="runClaude()"
-              @keydown.enter.ctrl.prevent="runClaude()"
-              @keydown="handlePromptKeydown($event)"
-              @input="handlePromptInput($event)"
-            ></textarea>
+            <textarea id="prompt" class="input min-h-[104px]" x-model="claudePrompt"
+              placeholder="Pergunte algo sobre os dados ou digite / para começar"
+              @keydown.enter.meta.prevent="runClaude()" @keydown.enter.ctrl.prevent="runClaude()"
+              @keydown="handlePromptKeydown($event)" @input="handlePromptInput($event)"></textarea>
             <template x-if="autoToolMenuOpen">
               <div class="auto-tool-menu" @click.outside="autoToolMenuOpen = false">
                 <div class="flex items-center justify-between mb-2">
                   <p class="text-xs text-slate-400">Auto-tool</p>
-                  <button type="button" class="text-[11px] text-slate-400 hover:text-slate-200" @click="autoToolMenuOpen = false">
+                  <button type="button" class="text-[11px] text-slate-400 hover:text-slate-200"
+                    @click="autoToolMenuOpen = false">
                     fechar
                   </button>
                 </div>
                 <div class="flex flex-col gap-1">
                   <template x-for="tool in autoTools" :key="tool.id">
-                    <button
-                      type="button"
-                      class="auto-tool-item"
-                      :class="tool.active ? '' : 'auto-tool-item--disabled'"
-                      @click="selectAutoTool(tool)"
-                      :disabled="!tool.active"
-                    >
+                    <button type="button" class="auto-tool-item" :class="tool.active ? '' : 'auto-tool-item--disabled'"
+                      @click="selectAutoTool(tool)" :disabled="!tool.active">
                       <div class="flex items-center gap-2">
                         <span class="font-mono text-sm" x-text="tool.label"></span>
                         <span class="text-[11px] text-amber-300" x-show="!tool.active">Em breve</span>
@@ -175,7 +175,9 @@
               <select class="input w-full sm:w-72" x-model="unidadeSelecionada" :disabled="unidadesLoading">
                 <option value="all">Todas as unidades</option>
                 <template x-for="unit in unidades" :key="unit.unidade_id">
-                  <option :value="unit.unidade_id" x-text="`${unit.name || 'Unidade'} (ID ${unit.unidade_id}${unit.cnes ? ', CNES ' + unit.cnes : ''})`"></option>
+                  <option :value="unit.unidade_id"
+                    x-text="`${unit.name || 'Unidade'} (ID ${unit.unidade_id}${unit.cnes ? ', CNES ' + unit.cnes : ''})`">
+                  </option>
                 </template>
               </select>
             </div>
@@ -233,94 +235,139 @@
                   </div>
                   <div class="space-y-1">
                     <p class="text-xs text-slate-400">Idade</p>
-                    <p class="text-base font-semibold" x-text="patientData.age_years != null ? `${patientData.age_years} anos` : 'N/A'"></p>
+                    <p class="text-base font-semibold"
+                      x-text="patientData.age_years != null ? `${patientData.age_years} anos` : 'N/A'"></p>
                   </div>
                 </div>
 
+                <div class="flex justify-center">
+                  <button type="button" class="btn-primary" @click="summarizeHistory()" :disabled="summaryPreparing">
+                    <span x-show="!summaryPreparing">Resumir Histórico</span>
+                    <span x-show="summaryPreparing" class="flex items-center gap-2">
+                      <span class="h-2 w-2 rounded-full bg-slate-100 animate-ping"></span>
+                      Preparando...
+                    </span>
+                  </button>
+                </div>
+
                 <div class="border border-slate-800 bg-slate-900/60 rounded-xl p-4 space-y-3">
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <p class="text-xs text-slate-400">Histórico SOAP</p>
-                      <p class="text-sm text-slate-200">Últimos atendimentos</p>
-                    </div>
-                    <span class="text-xs text-slate-400" x-show="patientHistoryLoading">Carregando...</span>
-                  </div>
-                  <p class="text-sm text-rose-200" x-show="patientHistoryError" x-text="patientHistoryError"></p>
-                  <template x-if="!patientHistoryError">
-                    <div class="space-y-3">
-                      <p class="text-sm text-slate-200 whitespace-pre-line" x-text="patientHistorySummary || 'Nenhum atendimento SOAP encontrado.'"></p>
-                      <div class="divide-y divide-slate-800" x-show="patientHistory.length">
-                        <template x-for="item in patientHistory" :key="item.atendimento_id">
-                          <details class="pt-3 space-y-1">
-                            <summary class="flex items-center justify-between text-xs text-slate-400 cursor-pointer">
-                              <span>
-                                <span x-text="formatDateTime(item.data_hora)"></span>
-                                <span x-show="item.profissional"> · <span x-text="item.profissional"></span></span>
-                                <span class="text-slate-500" x-show="item.cbo_descricao || item.cbo_codigo" x-text="item.cbo_descricao ? ' (' + item.cbo_descricao + ')' : item.cbo_codigo ? ' (' + item.cbo_codigo + ')' : ''"></span>
-                              </span>
-                              <span class="text-[11px] text-slate-500">clique para ver</span>
-                            </summary>
-                            <div class="space-y-1 pl-1 pr-1 pb-1">
-                              <p class="text-xs text-slate-300" x-show="item.soap_s_clean"><span class="font-semibold text-slate-100">S:</span> <span x-text="item.soap_s_clean"></span></p>
-                              <p class="text-xs text-slate-300" x-show="item.soap_o_clean"><span class="font-semibold text-slate-100">O:</span> <span x-text="item.soap_o_clean"></span></p>
-                              <p class="text-xs text-slate-300" x-show="item.soap_a_clean"><span class="font-semibold text-slate-100">A:</span> <span x-text="item.soap_a_clean"></span></p>
-                              <p class="text-xs text-slate-300" x-show="item.soap_p_clean"><span class="font-semibold text-slate-100">P:</span> <span x-text="item.soap_p_clean"></span></p>
-                              <template x-if="item.condicoes && item.condicoes.length">
-                                <div class="mt-1 space-y-1">
-                                  <p class="text-[11px] text-slate-400">Condições desta consulta</p>
-                                  <template x-for="c in item.condicoes" :key="c.condition_id || c.cid_code || c.ciap_code">
-                                    <p class="text-[11px] text-slate-300">
-                                      <span class="font-semibold" x-text="c.cid_code || c.ciap_code || 'Sem código'"></span>
-                                      <span class="text-slate-400" x-show="c.cid_description || c.ciap_description">
-                                        - <span x-text="c.cid_description || c.ciap_description"></span>
-                                      </span>
-                                      <span x-show="c.observacao_clean"> · <span x-text="c.observacao_clean"></span></span>
-                                    </p>
-                                  </template>
-                                </div>
-                              </template>
-                            </div>
-                          </details>
-                        </template>
+                  <details class="space-y-3" :open="patientHistoryOpen"
+                    @toggle="toggleHistorySection($event.target.open)">
+                    <summary class="flex items-center justify-between cursor-pointer">
+                      <div>
+                        <p class="text-xs text-slate-400">Histórico SOAP</p>
+                        <p class="text-sm text-slate-200"
+                          x-text="patientHistorySummaryShort || 'Clique para carregar histórico'"></p>
                       </div>
-                    </div>
-                  </template>
-                </div>
-
-                <div class="border border-slate-800 bg-slate-900/60 rounded-xl p-4 space-y-3">
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <p class="text-xs text-slate-400">Condições registradas</p>
-                      <p class="text-sm text-slate-200">CID/CIAP e observações</p>
-                    </div>
-                    <span class="text-xs text-slate-400" x-show="patientConditionsLoading">Carregando...</span>
-                  </div>
-                  <p class="text-sm text-rose-200" x-show="patientConditionsError" x-text="patientConditionsError"></p>
-                  <template x-if="!patientConditionsError">
-                    <div class="space-y-2">
-                      <template x-if="patientConditions.length">
-                        <div class="space-y-2">
-                          <template x-for="cond in patientConditions" :key="cond.condition_id">
-                            <div class="rounded-lg border border-slate-800 bg-slate-950/40 p-3 space-y-1">
-                              <p class="text-xs text-slate-300">
-                                <span class="font-semibold text-slate-100" x-text="cond.cid_code || cond.ciap_code || 'Sem código'"></span>
-                                <span class="text-slate-400" x-show="cond.cid_description || cond.ciap_description">
-                                  - <span x-text="cond.cid_description || cond.ciap_description"></span>
+                      <span class="text-[11px] text-slate-500">clique para abrir</span>
+                    </summary>
+                    <p class="text-sm text-rose-200" x-show="patientHistoryError" x-text="patientHistoryError"></p>
+                    <div class="text-sm text-slate-400" x-show="patientHistoryLoading">Carregando histórico...</div>
+                    <template x-if="!patientHistoryError && !patientHistoryLoading && patientHistory.length">
+                      <div class="space-y-3">
+                        <div class="divide-y divide-slate-800">
+                          <template x-for="item in patientHistory" :key="item.atendimento_id">
+                            <details class="pt-3 space-y-1">
+                              <summary class="flex items-center justify-between text-xs text-slate-400 cursor-pointer">
+                                <span>
+                                  <span x-text="formatDateTime(item.data_hora)"></span>
+                                  <span x-show="item.profissional"> · <span x-text="item.profissional"></span></span>
+                                  <span class="text-slate-500" x-show="item.cbo_descricao || item.cbo_codigo"
+                                    x-text="item.cbo_descricao ? ' (' + item.cbo_descricao + ')' : item.cbo_codigo ? ' (' + item.cbo_codigo + ')' : ''"></span>
                                 </span>
-                              </p>
-                              <p class="text-xs text-slate-400" x-show="cond.observacao_clean">Obs: <span x-text="cond.observacao_clean"></span></p>
-                              <p class="text-[11px] text-slate-500">
-                                <span x-show="cond.dt_inicio_condicao">Início: <span x-text="cond.dt_inicio_condicao"></span></span>
-                                <span x-show="cond.dt_fim_condicao"> · Fim: <span x-text="cond.dt_fim_condicao"></span></span>
-                                <span x-show="cond.situacao_id"> · Situação: <span x-text="cond.situacao_id"></span></span>
-                              </p>
-                            </div>
+                                <span class="text-[11px] text-slate-500">detalhes</span>
+                              </summary>
+                              <div class="space-y-1 pl-1 pr-1 pb-1">
+                                <p class="text-xs text-slate-300" x-show="item.soap_s_clean"><span
+                                    class="font-semibold text-slate-100">S:</span> <span
+                                    x-text="item.soap_s_clean"></span></p>
+                                <p class="text-xs text-slate-300" x-show="item.soap_o_clean"><span
+                                    class="font-semibold text-slate-100">O:</span> <span
+                                    x-text="item.soap_o_clean"></span></p>
+                                <p class="text-xs text-slate-300" x-show="item.soap_a_clean"><span
+                                    class="font-semibold text-slate-100">A:</span> <span
+                                    x-text="item.soap_a_clean"></span></p>
+                                <p class="text-xs text-slate-300" x-show="item.soap_p_clean"><span
+                                    class="font-semibold text-slate-100">P:</span> <span
+                                    x-text="item.soap_p_clean"></span></p>
+                                <template x-if="item.condicoes && item.condicoes.length">
+                                  <div class="mt-1 space-y-1">
+                                    <p class="text-[11px] text-slate-400">Condições desta consulta</p>
+                                    <template x-for="c in item.condicoes"
+                                      :key="c.condition_id || c.cid_code || c.ciap_code">
+                                      <p class="text-[11px] text-slate-300">
+                                        <span class="font-semibold"
+                                          x-text="c.cid_code || c.ciap_code || 'Sem código'"></span>
+                                        <span class="text-slate-400" x-show="c.cid_description || c.ciap_description">
+                                          - <span x-text="c.cid_description || c.ciap_description"></span>
+                                        </span>
+                                        <span x-show="c.observacao_clean"> · <span
+                                            x-text="c.observacao_clean"></span></span>
+                                      </p>
+                                    </template>
+                                  </div>
+                                </template>
+                              </div>
+                            </details>
                           </template>
                         </div>
-                      </template>
-                      <p class="text-xs text-slate-400" x-show="!patientConditions.length">Nenhuma condição cadastrada.</p>
-                    </div>
-                  </template>
+                      </div>
+                    </template>
+                    <p class="text-sm text-slate-400"
+                      x-show="!patientHistoryLoading && !patientHistoryError && !patientHistory.length">Nenhum
+                      atendimento SOAP encontrado.</p>
+                  </details>
+                </div>
+
+                <div class="border border-slate-800 bg-slate-900/60 rounded-xl p-4 space-y-3">
+                  <details class="space-y-3" :open="patientConditionsOpen"
+                    @toggle="toggleConditionsSection($event.target.open)">
+                    <summary class="flex items-center justify-between cursor-pointer">
+                      <div>
+                        <p class="text-xs text-slate-400">Condições registradas</p>
+                        <p class="text-sm text-slate-200">
+                          <span
+                            x-text="patientConditionsLoaded ? `${patientConditions.length || 0} condição(ões)` : 'Clique para carregar condições'"></span>
+                        </p>
+                      </div>
+                      <span class="text-[11px] text-slate-500">clique para abrir</span>
+                    </summary>
+                    <p class="text-sm text-rose-200" x-show="patientConditionsError" x-text="patientConditionsError">
+                    </p>
+                    <div class="text-sm text-slate-400" x-show="patientConditionsLoading">Carregando condições...</div>
+                    <template x-if="!patientConditionsError && !patientConditionsLoading">
+                      <div class="space-y-2">
+                        <template x-if="patientConditions.length">
+                          <div class="space-y-2">
+                            <template x-for="cond in patientConditions"
+                              :key="cond.condition_id || cond.cid_code || cond.ciap_code">
+                              <div class="rounded-lg border border-slate-800 bg-slate-950/40 p-3 space-y-1">
+                                <p class="text-xs text-slate-300">
+                                  <span class="font-semibold text-slate-100"
+                                    x-text="cond.cid_code || cond.ciap_code || 'Sem código'"></span>
+                                  <span class="text-slate-400" x-show="cond.cid_description || cond.ciap_description">
+                                    - <span x-text="cond.cid_description || cond.ciap_description"></span>
+                                  </span>
+                                </p>
+                                <p class="text-xs text-slate-400" x-show="cond.observacao_clean">Obs: <span
+                                    x-text="cond.observacao_clean"></span></p>
+                                <p class="text-[11px] text-slate-500">
+                                  <span x-show="cond.dt_inicio_condicao">Início: <span
+                                      x-text="cond.dt_inicio_condicao"></span></span>
+                                  <span x-show="cond.dt_fim_condicao"> · Fim: <span
+                                      x-text="cond.dt_fim_condicao"></span></span>
+                                  <span x-show="cond.situacao_id"> · Situação: <span
+                                      x-text="cond.situacao_id"></span></span>
+                                </p>
+                              </div>
+                            </template>
+                          </div>
+                        </template>
+                        <p class="text-xs text-slate-400" x-show="!patientConditions.length">Nenhuma condição
+                          cadastrada.</p>
+                      </div>
+                    </template>
+                  </details>
                 </div>
               </div>
             </template>
@@ -344,14 +391,8 @@
             </p>
             <label class="space-y-2 text-sm w-full">
               <span class="text-slate-200">ID do paciente</span>
-              <input
-                class="input"
-                type="number"
-                x-ref="autoToolInput"
-                x-model="autoToolArgument"
-                placeholder="Ex.: 5708"
-                @keydown.enter.prevent="confirmPacienteAutoTool()"
-              />
+              <input class="input" type="number" x-ref="autoToolInput" x-model="autoToolArgument"
+                placeholder="Ex.: 5708" @keydown.enter.prevent="confirmPacienteAutoTool()" />
             </label>
             <div class="flex items-center gap-3">
               <button class="btn-primary" type="button" @click="confirmPacienteAutoTool()">Buscar</button>
@@ -425,4 +466,5 @@
   <script src="/static/js/app.js" defer></script>
   <script src="https://unpkg.com/alpinejs@3.14.0/dist/cdn.min.js" defer></script>
 </body>
+
 </html>

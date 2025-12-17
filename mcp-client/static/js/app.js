@@ -152,11 +152,17 @@ const createMcpConsole = () => ({
   patientFocusId: null,
   patientHistory: [],
   patientHistorySummary: '',
+  patientHistorySummaryShort: '',
   patientHistoryLoading: false,
+  patientHistoryLoaded: false,
+  patientHistoryOpen: false,
   patientHistoryError: null,
   patientConditions: [],
   patientConditionsLoading: false,
+  patientConditionsLoaded: false,
+  patientConditionsOpen: false,
   patientConditionsError: null,
+  summaryPreparing: false,
 
   init() {
     this.status = 'connected'
@@ -241,7 +247,7 @@ const createMcpConsole = () => ({
     this.autoToolInputOpen = false
     this.autoToolArgument = ''
     this.autoToolError = null
-    await this.showPatientModal(parsed, { autoSummarize: true })
+    await this.showPatientModal(parsed)
   },
 
   handleTimelineClick(event) {
@@ -404,25 +410,29 @@ const createMcpConsole = () => ({
     this.patientFocusId = null
     this.patientHistory = []
     this.patientHistorySummary = ''
+    this.patientHistorySummaryShort = ''
     this.patientHistoryError = null
     this.patientHistoryLoading = false
+    this.patientHistoryLoaded = false
+    this.patientHistoryOpen = false
     this.patientConditions = []
     this.patientConditionsError = null
     this.patientConditionsLoading = false
+    this.patientConditionsLoaded = false
+    this.patientConditionsOpen = false
+    this.summaryPreparing = false
   },
 
-  async showPatientModal(patientId, options = {}) {
-    const { autoSummarize = false } = options
+  async showPatientModal(patientId) {
     this.patientModalOpen = true
     this.patientLoading = true
-    this.patientHistoryLoading = true
-    this.patientConditionsLoading = true
     this.patientError = null
     this.patientHistoryError = null
     this.patientConditionsError = null
     this.patientData = null
     this.patientHistory = []
     this.patientHistorySummary = ''
+    this.patientHistorySummaryShort = ''
     this.patientConditions = []
     this.patientFocusId = patientId
     try {
@@ -437,9 +447,14 @@ const createMcpConsole = () => ({
     } finally {
       this.patientLoading = false
     }
+  },
 
+  async loadPatientHistory() {
+    if (!this.patientFocusId || this.patientHistoryLoading) return
+    this.patientHistoryLoading = true
+    this.patientHistoryError = null
     try {
-      const historyRes = await fetch(`/api/pacientes/${patientId}/historico`)
+      const historyRes = await fetch(`/api/pacientes/${this.patientFocusId}/historico`)
       const historyJson = await historyRes.json()
       if (!historyRes.ok) {
         throw new Error(historyJson?.detail || 'Falha ao carregar histórico SOAP')
@@ -460,14 +475,21 @@ const createMcpConsole = () => ({
           }))
         : []
       this.patientHistorySummary = historyJson.resumo || ''
+      this.patientHistorySummaryShort = (historyJson.resumo || '').split('\n')[0] || ''
+      this.patientHistoryLoaded = true
     } catch (err) {
       this.patientHistoryError = err.message
     } finally {
       this.patientHistoryLoading = false
     }
+  },
 
+  async loadPatientConditions() {
+    if (!this.patientFocusId || this.patientConditionsLoading) return
+    this.patientConditionsLoading = true
+    this.patientConditionsError = null
     try {
-      const condRes = await fetch(`/api/pacientes/${patientId}/condicoes?limite=200`)
+      const condRes = await fetch(`/api/pacientes/${this.patientFocusId}/condicoes?limite=200`)
       const condJson = await condRes.json()
       if (!condRes.ok) {
         throw new Error(condJson?.detail || 'Falha ao carregar condições')
@@ -478,14 +500,25 @@ const createMcpConsole = () => ({
             observacao_clean: this.stripHtml(c.observacao),
           }))
         : []
+      this.patientConditionsLoaded = true
     } catch (err) {
       this.patientConditionsError = err.message
     } finally {
       this.patientConditionsLoading = false
     }
+  },
 
-    if (autoSummarize) {
-      this.buildAndSendSummaryPrompt()
+  async toggleHistorySection(open) {
+    this.patientHistoryOpen = open
+    if (open && !this.patientHistoryLoaded) {
+      await this.loadPatientHistory()
+    }
+  },
+
+  async toggleConditionsSection(open) {
+    this.patientConditionsOpen = open
+    if (open && !this.patientConditionsLoaded) {
+      await this.loadPatientConditions()
     }
   },
 
@@ -546,6 +579,23 @@ const createMcpConsole = () => ({
 
     if (this.claudeApiKey) {
       this.$nextTick(() => this.runClaude())
+    }
+  },
+
+  async summarizeHistory() {
+    if (!this.patientFocusId) return
+    this.summaryPreparing = true
+    try {
+      if (!this.patientHistoryLoaded) {
+        await this.loadPatientHistory()
+      }
+      if (!this.patientConditionsLoaded) {
+        await this.loadPatientConditions()
+      }
+      this.buildAndSendSummaryPrompt()
+      this.closePatientModal()
+    } finally {
+      this.summaryPreparing = false
     }
   },
 })
