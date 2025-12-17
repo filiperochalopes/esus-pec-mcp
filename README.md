@@ -5,13 +5,14 @@ Servidor MCP em Python para consultar dados clínicos do PEC. No MVP atual, expo
 ## Requisitos
 - Python 3.11+
 - Acesso de leitura ao PostgreSQL do PEC.
+- Chave Anthropic (Desejável)
 
 ## Segurança e Privacidade
 
 Esse MCP busca anonimizar dados antes de tornar legível para a LM, criando um canal de seguranca e privacidade para os dados do cidadão.
 
-> ! Importante
-Essa aplcação é um MVP, tem rotas de API expostas e não possui autenticação. Certifique-se de utilizar em um ambiente seguro por critérios de rede ou BasicAuth no mínimo via proxy nginx.
+> [!IMPORTANT]
+> Essa aplicação é um MVP, possui rotas de API expostas e não conta com mecanismos de autenticação nativos. Certifique-se de utilizá-la em um ambiente seguro (VPN/Rede Interna) ou implementar BasicAuth via proxy reverso (Nginx/Apache).
 
 
 ## Configuração

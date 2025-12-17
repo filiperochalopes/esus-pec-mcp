@@ -143,7 +143,12 @@ const createMcpConsole = () => ({
     { id: 'gestantes', label: '/gestantes', description: 'Breve', active: false },
     { id: 'gestante-cpf', label: '/gestante-cpf', description: 'Breve', active: false },
     { id: 'gestante-id', label: '/gestante-id', description: 'Breve', active: false },
-    { id: 'saude-360-c3', label: '/saude-360-c3', description: 'Breve', active: false },
+    {
+      id: 'saude-360-c3',
+      label: '/saude-360-c3',
+      description: 'Abrir tabela do indicador C3 (gestantes/puérperas) por unidade, sem usar LLM.',
+      active: true,
+    },
   ],
   patientModalOpen: false,
   patientLoading: false,
@@ -163,6 +168,14 @@ const createMcpConsole = () => ({
   patientConditionsOpen: false,
   patientConditionsError: null,
   summaryPreparing: false,
+  saude360ModalOpen: false,
+  saude360Loading: false,
+  saude360Error: null,
+  saude360Data: null,
+  saude360Filters: {
+    startDate: '',
+    endDate: '',
+  },
   toolsModalOpen: false,
   toolsInfo: [
     {
@@ -229,6 +242,30 @@ const createMcpConsole = () => ({
     return renderMarkdown(text)
   },
 
+  formatScore(value) {
+    const num = Number(value)
+    if (Number.isNaN(num)) return '—'
+    return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  },
+
+  scoreClass(value) {
+    const num = Number(value)
+    if (Number.isNaN(num)) return 'text-slate-300'
+    if (num > 75) return 'text-emerald-300'
+    if (num > 50) return 'text-sky-300'
+    if (num > 25) return 'text-amber-300'
+    return 'text-rose-300'
+  },
+
+  saude360Rows() {
+    if (!this.saude360Data || !Array.isArray(this.saude360Data.unidades)) return []
+    return [...this.saude360Data.unidades].sort((a, b) => {
+      const av = Number(a?.score_c3 || 0)
+      const bv = Number(b?.score_c3 || 0)
+      return bv - av
+    })
+  },
+
   stripHtml(text) {
     if (!text) return ''
     const div = document.createElement('div')
@@ -267,6 +304,9 @@ const createMcpConsole = () => ({
         const input = this.$refs?.autoToolInput
         if (input?.focus) input.focus()
       })
+    } else if (tool.id === 'saude-360-c3') {
+      this.autoToolMenuOpen = false
+      this.loadSaude360C3()
     }
   },
 
@@ -351,6 +391,36 @@ const createMcpConsole = () => ({
     }
   },
 
+  async loadSaude360C3() {
+    if (this.saude360Loading) return
+    this.saude360Error = null
+    this.saude360Loading = true
+    this.saude360ModalOpen = true
+    const params = new URLSearchParams()
+    if (this.saude360Filters.startDate) params.set('start_date', this.saude360Filters.startDate)
+    if (this.saude360Filters.endDate) params.set('end_date', this.saude360Filters.endDate)
+    const qs = params.toString()
+    try {
+      const res = await fetch(`/saude-360/c3${qs ? `?${qs}` : ''}`)
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data?.detail || 'Falha ao calcular indicador C3')
+      }
+      this.saude360Data = data
+      this.saude360ModalOpen = true
+    } catch (err) {
+      this.saude360Error = err.message
+    } finally {
+      this.saude360Loading = false
+      this.autoToolMenuOpen = false
+    }
+  },
+
+  closeSaude360Modal() {
+    this.saude360ModalOpen = false
+    this.saude360Error = null
+  },
+
   async saveConfig() {
     this.configError = null
     this.savingConfig = true
@@ -388,6 +458,13 @@ const createMcpConsole = () => ({
 
     const promptBase = this.claudePrompt.trim()
     let prompt = promptBase
+
+    if (promptBase === '/saude-360-c3') {
+      this.claudePrompt = ''
+      this.autoToolMenuOpen = false
+      this.loadSaude360C3()
+      return
+    }
 
     if (this.unidadeSelecionada && this.unidadeSelecionada !== 'all') {
       const selected = this.unidades.find(

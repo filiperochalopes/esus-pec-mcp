@@ -382,6 +382,115 @@
         </div>
       </template>
 
+      <template x-if="saude360ModalOpen">
+        <div class="fixed inset-0 z-30 flex items-center justify-center px-6" role="dialog" aria-modal="true">
+          <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" @click="closeSaude360Modal()"></div>
+          <div class="relative glass modal-card w-full max-w-5xl rounded-2xl p-6 space-y-5">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-slate-400">Saúde 360 · C.3</p>
+                <h2 class="text-lg font-semibold">Gestantes e puérperas por unidade</h2>
+                <p class="text-sm text-slate-300">Componentes implementados: A–F (boas práticas com pontuação explícita).</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" class="btn-ghost" @click="closeSaude360Modal()">Fechar</button>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div class="space-y-1">
+                <p class="text-sm text-slate-200">
+                  Período:
+                  <span class="font-semibold" x-text="saude360Data?.period?.start_date || 'últimos 12 meses'"></span>
+                  –
+                  <span class="font-semibold" x-text="saude360Data?.period?.end_date || 'hoje'"></span>
+                </p>
+                <p class="text-sm text-slate-300">
+                  Coorte:
+                  <span class="font-semibold" x-text="saude360Data?.coorte_total || 0"></span>
+                  gestantes/puérperas com unidade vinculada.
+                </p>
+                <p class="text-xs text-slate-400">Deixe datas em branco para usar o padrão (últimos 12 meses).</p>
+              </div>
+              <div class="flex flex-col gap-2 md:flex-row md:items-end">
+                <label class="text-sm text-slate-200 space-y-1">
+                  <span>Data inicial</span>
+                  <input class="input" type="date" x-model="saude360Filters.startDate" />
+                </label>
+                <label class="text-sm text-slate-200 space-y-1">
+                  <span>Data final</span>
+                  <input class="input" type="date" x-model="saude360Filters.endDate" />
+                </label>
+                <button type="button" class="btn-primary" @click="loadSaude360C3()" :disabled="saude360Loading">
+                  <span x-show="!saude360Loading">Atualizar</span>
+                  <span x-show="saude360Loading" class="flex items-center gap-2">
+                    <span class="h-2 w-2 rounded-full bg-slate-100 animate-ping"></span>
+                    Calculando...
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <p class="text-sm text-rose-200" x-show="saude360Error" x-text="saude360Error"></p>
+            <div class="text-sm text-slate-300 flex items-center gap-2" x-show="saude360Loading">
+              <span class="h-5 w-5 rounded-full border-2 border-slate-500 border-t-transparent animate-spin"></span>
+              Calculando indicador...
+            </div>
+
+            <template x-if="!saude360Loading">
+              <div>
+                <p class="text-xs text-slate-400 mb-2">
+                  Classificação de cores: ótimo &gt; 75 (verde), bom &gt; 50 (azul), suficiente &gt; 25 (amarelo),
+                  regular ≤ 25 (vermelho).
+                </p>
+                <template x-if="saude360Data && saude360Data.unidades && saude360Data.unidades.length">
+                  <div class="overflow-auto border border-slate-800 rounded-xl">
+                    <table class="min-w-full text-sm">
+                      <thead class="bg-slate-900/60">
+                        <tr class="text-left text-slate-200">
+                          <th class="px-4 py-3">Unidade</th>
+                          <th class="px-4 py-3">CNES</th>
+                          <th class="px-4 py-3">Coorte</th>
+                          <th class="px-4 py-3">C3 (0–100)</th>
+                          <th class="px-4 py-3">A ≤12s</th>
+                          <th class="px-4 py-3">B ≥7 cons.</th>
+                          <th class="px-4 py-3">C PA ≥7</th>
+                          <th class="px-4 py-3">D Peso+Alt ≥7</th>
+                          <th class="px-4 py-3">E VD gest. ≥3</th>
+                          <th class="px-4 py-3">F dTpa ≥20s</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template x-for="row in saude360Rows()" :key="row.cnes || row.unidade_id || row.nome">
+                          <tr class="border-t border-slate-800 hover:bg-slate-900/40">
+                            <td class="px-4 py-3">
+                              <p class="font-semibold" x-text="row.nome || 'Sem nome'"></p>
+                              <p class="text-xs text-slate-400" x-show="row.unidade_id">ID <span x-text="row.unidade_id"></span></p>
+                            </td>
+                            <td class="px-4 py-3" x-text="row.cnes || '—'"></td>
+                            <td class="px-4 py-3 font-semibold" x-text="row.gestacoes"></td>
+                            <td class="px-4 py-3 font-semibold" :class="scoreClass(row.score_c3)" x-text="formatScore(row.score_c3)"></td>
+                            <td class="px-4 py-3" x-text="row.componentes?.a_primeira_consulta_ate_12s ?? 0"></td>
+                            <td class="px-4 py-3" x-text="row.componentes?.b_consultas_7_ou_mais ?? 0"></td>
+                            <td class="px-4 py-3" x-text="row.componentes?.c_pressao_arterial_7 ?? 0"></td>
+                            <td class="px-4 py-3" x-text="row.componentes?.d_peso_altura_7 ?? 0"></td>
+                            <td class="px-4 py-3" x-text="row.componentes?.e_visitas_gestante_3 ?? 0"></td>
+                            <td class="px-4 py-3" x-text="row.componentes?.f_dtpa_apos_20s ?? 0"></td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
+                </template>
+                <p class="text-sm text-slate-300" x-show="saude360Data && (!saude360Data.unidades || !saude360Data.unidades.length)">
+                  Nenhum resultado para o período selecionado.
+                </p>
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
+
       <template x-if="toolsModalOpen">
         <div class="fixed inset-0 z-30 flex items-center justify-center px-6" role="dialog" aria-modal="true">
           <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" @click="toolsModalOpen = false"></div>
