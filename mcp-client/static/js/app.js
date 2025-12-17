@@ -163,6 +163,44 @@ const createMcpConsole = () => ({
   patientConditionsOpen: false,
   patientConditionsError: null,
   summaryPreparing: false,
+  toolsModalOpen: false,
+  toolsInfo: [
+    {
+      id: 'capturar_paciente',
+      name: 'capturar_paciente',
+      scope: 'somente leitura',
+      description: 'Dados mínimos do paciente (iniciais, data de nascimento, sexo/gênero) com filtros obrigatórios.',
+      filters: 'Requer id, prefixo, sexo ou faixa etária; aceita unidade_saude_id; limite 200.',
+    },
+    {
+      id: 'listar_condicoes',
+      name: 'listar_condicoes',
+      scope: 'somente leitura',
+      description: 'Lista condições CID/CIAP de pacientes e última evolução/observação.',
+      filters: 'Precisa de ao menos um filtro (paciente, nome, sexo, idade ou CID/CIAP/texto); limite 200.',
+    },
+    {
+      id: 'contar_pacientes',
+      name: 'contar_pacientes',
+      scope: 'somente leitura',
+      description: 'Retorna somente a contagem de pacientes distintos pelos filtros de paciente/condição.',
+      filters: 'Exige pelo menos um critério; suporta AND/OR em múltiplos CIDs; sem payload de pacientes.',
+    },
+    {
+      id: 'listar_unidades_saude',
+      name: 'listar_unidades_saude',
+      scope: 'somente leitura',
+      description: 'Lista unidades (id interno, CNES, nome) para popular selects e filtros.',
+      filters: 'Sem filtros; apenas lista todas as unidades ativas.',
+    },
+    {
+      id: 'listar_ultimos_atendimentos_soap',
+      name: 'listar_ultimos_atendimentos_soap',
+      scope: 'somente leitura',
+      description: 'Últimos atendimentos SOAP de um paciente específico, com profissional e CBO.',
+      filters: 'Obrigatório paciente_id; médicos/enfermeiros (CBO 225%/2235%); limite opcional até 1000.',
+    },
+  ],
 
   init() {
     this.status = 'connected'

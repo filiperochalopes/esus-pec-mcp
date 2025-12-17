@@ -34,6 +34,12 @@ python -m pec_mcp.server
 ```
 - O transporte padrão é `streamable-http`, compatível com `mcp` CLI.
 
+## Integração MCP standalone
+- Rode apenas o servidor acima (sem UI) para plugar em qualquer cliente/orquestrador compatível com o Model Context Protocol via HTTP (`streamable-http`).
+- Aponte seu cliente para `http://<MCP_HTTP_HOST>:<MCP_HTTP_PORT>` e use o server id `pec-mcp`; nenhuma integração proprietária é necessária.
+- As tools expostas no modo standalone são as mesmas do servidor: `capturar_paciente`, `listar_condicoes`, `contar_pacientes`, `listar_unidades_saude` e `listar_ultimos_atendimentos_soap`.
+- Caso precise isolar o acesso, mantenha o host em `127.0.0.1` e exponha só via túnel/SSH ou reverse proxy com BasicAuth.
+
 ## Rodando a UI FastAPI/Jinja2
 ```bash
 export PYTHONPATH="mcp-server/src:mcp-client"
