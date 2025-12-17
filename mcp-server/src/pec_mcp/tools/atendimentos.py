@@ -54,9 +54,16 @@ def listar_ultimos_atendimentos_soap(
     Recupera últimos atendimentos SOAP do paciente (médicos e enfermeiros).
     """
 
-    safe_limit = max(1, min(limite, 200))
+    if paciente_id is None:
+        raise ValueError("paciente_id é obrigatório para consultar histórico de atendimento.")
+
+    paciente_id_int = int(paciente_id)
+    if paciente_id_int <= 0:
+        raise ValueError("paciente_id deve ser um inteiro positivo.")
+
+    safe_limit = max(1, min(int(limite), 200))
     conn = get_db_conn(ctx)
-    rows = query_all(conn, _SQL_ATENDIMENTOS, (paciente_id, safe_limit))
+    rows = query_all(conn, _SQL_ATENDIMENTOS, (paciente_id_int, safe_limit))
 
     results: List[AtendimentoSOAPResult] = []
     for row in rows:

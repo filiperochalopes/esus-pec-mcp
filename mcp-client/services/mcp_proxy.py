@@ -20,6 +20,7 @@ from pec_mcp.tools.paciente import capturar_paciente
 from pec_mcp.tools.condicoes import listar_condicoes
 from pec_mcp.tools.contar_pacientes import contar_pacientes
 from pec_mcp.tools.unidades import listar_unidades_saude
+from pec_mcp.tools.atendimentos import listar_ultimos_atendimentos_soap
 
 
 class _Ctx:
@@ -71,6 +72,27 @@ TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
                 },
             },
             "required": [],
+        },
+    },
+    "listar_ultimos_atendimentos_soap": {
+        "func": listar_ultimos_atendimentos_soap,
+        "description": "Lista os últimos atendimentos SOAP (S/O/A/P) de um paciente por id, retornando dados do profissional e CBO.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "paciente_id": {
+                    "type": "integer",
+                    "description": "Identificador interno do paciente (co_seq_cidadao).",
+                },
+                "limite": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 200,
+                    "default": 10,
+                    "description": "Quantidade máxima de atendimentos (1-200).",
+                },
+            },
+            "required": ["paciente_id"],
         },
     },
     "listar_condicoes": {

@@ -50,4 +50,25 @@ class HealthUnitResult(TypedDict):
     is_active: bool
 
 
-__all__ = ["PatientCaptureResult", "ConditionResult", "CountResult", "HealthUnitResult"]
+class AtendimentoSOAPResult(TypedDict):
+    atendimento_id: int
+    paciente_id: int
+    data_hora: Optional[str]
+    cbo_codigo: Optional[str]
+    cbo_descricao: Optional[str]
+    profissional: Optional[str]
+    tipo_profissional_id: Optional[str]
+    tipo_atendimento_id: Optional[str]
+    soap_s: Optional[str]
+    soap_o: Optional[str]
+    soap_a: Optional[str]
+    soap_p: Optional[str]
+
+
+__all__ = [
+    "PatientCaptureResult",
+    "ConditionResult",
+    "CountResult",
+    "HealthUnitResult",
+    "AtendimentoSOAPResult",
+]

@@ -8,7 +8,7 @@ import json
 import os
 from datetime import date
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
@@ -174,6 +174,77 @@ def _load_paciente_by_id(paciente_id: int) -> Dict[str, Any]:
     }
 
 
+def _load_paciente_history(paciente_id: int, limite: int = 8) -> List[Dict[str, Any]]:
+    """
+    Busca últimos atendimentos SOAP via tool MCP.
+    """
+
+    safe_limit = max(1, min(int(limite), 200))
+    try:
+        payload = call_tool(
+            "listar_ultimos_atendimentos_soap",
+            {"paciente_id": int(paciente_id), "limite": safe_limit},
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # pragma: no cover - dependente de integração MCP
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    if not payload.get("ok", False):
+        raise HTTPException(status_code=500, detail="Falha ao consultar histórico SOAP.")
+
+    result = payload.get("result")
+    return result if isinstance(result, list) else []
+
+
+def _summarize_soap_history(entries: List[Dict[str, Any]]) -> str:
+    """
+    Gera resumo textual simples a partir de itens SOAP.
+    """
+
+    if not entries:
+        return "Nenhum atendimento SOAP encontrado para este paciente."
+
+    lines: List[str] = []
+    total = len(entries)
+    latest = entries[0]
+
+    lines.append(f"{total} atendimento(s) encontrados (mais recentes primeiro).")
+
+    latest_bits = []
+    if latest.get("data_hora"):
+        latest_bits.append(f"em {latest['data_hora']}")
+    if latest.get("profissional"):
+        latest_bits.append(f"com {latest['profissional']}")
+    if latest.get("cbo_descricao"):
+        latest_bits.append(f"({latest['cbo_descricao']})")
+    if latest_bits:
+        lines.append("Último atendimento " + " ".join(latest_bits) + ".")
+
+    section_map = [("S", "soap_s"), ("O", "soap_o"), ("A", "soap_a"), ("P", "soap_p")]
+    for label, key in section_map:
+        snippets: List[str] = []
+        seen: set[str] = set()
+        for entry in entries:
+            raw = entry.get(key)
+            if not raw:
+                continue
+            text = " ".join(str(raw).split())
+            normalized = text.lower()
+            if not text or normalized in seen:
+                continue
+            seen.add(normalized)
+            stamped = entry.get("data_hora")
+            snippet = text if not stamped else f"{text} (em {stamped})"
+            snippets.append(snippet)
+            if len(snippets) >= 3:
+                break
+        if snippets:
+            lines.append(f"{label}: " + " | ".join(snippets))
+
+    return "\n".join(lines)
+
+
 @app.get("/")
 async def index(request: Request):
     cfg = load_db_config()
@@ -268,6 +339,18 @@ async def api_get_paciente(paciente_id: int):
     except Exception as exc:  # pragma: no cover - depende do banco
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return {"paciente": paciente}
+
+
+@app.get("/api/pacientes/{paciente_id}/historico")
+async def api_get_paciente_historico(paciente_id: int, limite: int = 8):
+    try:
+        historico = await run_in_threadpool(_load_paciente_history, paciente_id, limite)
+        resumo = _summarize_soap_history(historico)
+    except HTTPException:
+        raise
+    except Exception as exc:  # pragma: no cover - depende do banco/tool
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return {"historico": historico, "resumo": resumo}
 
 
 __all__ = ["app"]

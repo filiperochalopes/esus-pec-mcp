@@ -133,11 +133,27 @@ const createMcpConsole = () => ({
   unidadeSelecionada: 'all',
   unidadesLoading: false,
   unidadesErro: null,
+  autoToolMenuOpen: false,
+  autoToolInputOpen: false,
+  autoToolArgument: '',
+  autoToolError: null,
+  autoTools: [
+    { id: 'paciente-id', label: '/paciente-id', description: 'Abrir detalhes e histórico SOAP pelo id interno.', active: true },
+    { id: 'paciente-cpf', label: '/paciente-cpf', description: 'Breve', active: false },
+    { id: 'gestantes', label: '/gestantes', description: 'Breve', active: false },
+    { id: 'gestante-cpf', label: '/gestante-cpf', description: 'Breve', active: false },
+    { id: 'gestante-id', label: '/gestante-id', description: 'Breve', active: false },
+    { id: 'saude-360-c3', label: '/saude-360-c3', description: 'Breve', active: false },
+  ],
   patientModalOpen: false,
   patientLoading: false,
   patientData: null,
   patientError: null,
   patientFocusId: null,
+  patientHistory: [],
+  patientHistorySummary: '',
+  patientHistoryLoading: false,
+  patientHistoryError: null,
 
   init() {
     this.status = 'connected'
@@ -147,6 +163,15 @@ const createMcpConsole = () => ({
 
   formatTs(ts) {
     return new Date(ts).toLocaleTimeString()
+  },
+
+  formatDateTime(ts) {
+    if (!ts) return 'Sem data'
+    try {
+      return new Date(ts).toLocaleString()
+    } catch (err) {
+      return String(ts)
+    }
   },
 
   formatJson(value) {
@@ -160,6 +185,52 @@ const createMcpConsole = () => ({
   isCollapsible(event) {
     const type = event?.type
     return ['COMPLETE', 'TOOL_CALL', 'TOOL_RESULT'].includes(type)
+  },
+
+  handlePromptKeydown(event) {
+    if (event.key === '/') {
+      this.autoToolMenuOpen = true
+    } else if (event.key === 'Escape' && this.autoToolMenuOpen) {
+      this.autoToolMenuOpen = false
+    }
+  },
+
+  handlePromptInput(event) {
+    if (this.autoToolMenuOpen && !event.target.value.includes('/')) {
+      this.autoToolMenuOpen = false
+    }
+  },
+
+  selectAutoTool(tool) {
+    if (!tool || !tool.active) return
+    if (tool.id === 'paciente-id') {
+      this.autoToolMenuOpen = false
+      this.autoToolInputOpen = true
+      this.autoToolArgument = ''
+      this.autoToolError = null
+      this.$nextTick(() => {
+        const input = this.$refs?.autoToolInput
+        if (input?.focus) input.focus()
+      })
+    }
+  },
+
+  cancelAutoToolInput() {
+    this.autoToolInputOpen = false
+    this.autoToolArgument = ''
+    this.autoToolError = null
+  },
+
+  async confirmPacienteAutoTool() {
+    const parsed = parseInt(this.autoToolArgument, 10)
+    if (!parsed || Number.isNaN(parsed)) {
+      this.autoToolError = 'Informe um id numérico.'
+      return
+    }
+    this.autoToolInputOpen = false
+    this.autoToolArgument = ''
+    this.autoToolError = null
+    await this.showPatientModal(parsed)
   },
 
   handleTimelineClick(event) {
@@ -320,25 +391,47 @@ const createMcpConsole = () => ({
     this.patientData = null
     this.patientError = null
     this.patientFocusId = null
+    this.patientHistory = []
+    this.patientHistorySummary = ''
+    this.patientHistoryError = null
+    this.patientHistoryLoading = false
   },
 
   async showPatientModal(patientId) {
     this.patientModalOpen = true
     this.patientLoading = true
+    this.patientHistoryLoading = true
     this.patientError = null
+    this.patientHistoryError = null
     this.patientData = null
+    this.patientHistory = []
+    this.patientHistorySummary = ''
     this.patientFocusId = patientId
     try {
-      const res = await fetch(`/api/pacientes/${patientId}`)
-      const data = await res.json()
-      if (!res.ok) {
-        throw new Error(data?.detail || 'Falha ao carregar paciente')
+      const patientRes = await fetch(`/api/pacientes/${patientId}`)
+      const patientJson = await patientRes.json()
+      if (!patientRes.ok) {
+        throw new Error(patientJson?.detail || 'Falha ao carregar paciente')
       }
-      this.patientData = data.paciente
+      this.patientData = patientJson.paciente
     } catch (err) {
       this.patientError = err.message
     } finally {
       this.patientLoading = false
+    }
+
+    try {
+      const historyRes = await fetch(`/api/pacientes/${patientId}/historico?limite=8`)
+      const historyJson = await historyRes.json()
+      if (!historyRes.ok) {
+        throw new Error(historyJson?.detail || 'Falha ao carregar histórico SOAP')
+      }
+      this.patientHistory = Array.isArray(historyJson.historico) ? historyJson.historico : []
+      this.patientHistorySummary = historyJson.resumo || ''
+    } catch (err) {
+      this.patientHistoryError = err.message
+    } finally {
+      this.patientHistoryLoading = false
     }
   },
 })

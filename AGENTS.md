@@ -68,6 +68,19 @@
   - Não retorna lista de pacientes, apenas a contagem.
   - Valida faixa etária (age_min <= age_max) e tamanho de `condition_text` (máx 100 chars).
 
+### listar_ultimos_atendimentos_soap
+- Descrição: recupera os últimos atendimentos SOAP (S/O/A/P) de um paciente, trazendo profissional, CBO e timestamp.
+- Parâmetros:
+  - `paciente_id` (int, obrigatório, co_seq_cidadao)
+  - `limite` (int, default 10, máx 200)
+- Saída (`AtendimentoSOAPResult`):
+  - `atendimento_id`, `paciente_id`, `data_hora`
+  - `cbo_codigo`, `cbo_descricao`, `profissional`, `tipo_profissional_id`, `tipo_atendimento_id`
+  - `soap_s`, `soap_o`, `soap_a`, `soap_p`
+- Guardrails:
+  - Filtra apenas CBO médicos (`225%`) e enfermeiros (`2235%`).
+  - Ordena do mais recente para o mais antigo, respeitando limite máximo de 200.
+
 ## Limitações
 - Somente leitura; sem escrita ou alteração de dados clínicos.
 - Resposta não inclui identificadores diretos (sem nomes completos ou IDs externos).

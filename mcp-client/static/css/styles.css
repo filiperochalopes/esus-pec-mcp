@@ -181,3 +181,36 @@ body {
   outline: 2px solid rgba(125, 211, 252, 0.7);
   outline-offset: 2px;
 }
+
+.auto-tool-menu {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 260px;
+  background: rgba(10, 14, 26, 0.95);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(73, 143, 255, 0.12);
+  z-index: 10;
+}
+
+.auto-tool-item {
+  width: 100%;
+  text-align: left;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: border-color 0.15s ease, transform 0.1s ease;
+}
+
+.auto-tool-item:hover {
+  border-color: rgba(73, 143, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.auto-tool-item--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

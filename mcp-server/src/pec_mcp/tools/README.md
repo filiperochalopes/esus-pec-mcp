@@ -87,3 +87,20 @@
 - **Filtros suportados**: nenhum (retorna todas as unidades; no dump atual são 21, com 12 usadas em atendimentos e 10 com vínculos por CNES).
 - **Guardrails**:
   - Apenas leitura; ordena pelo nome da unidade.
+
+# Tool: listar_ultimos_atendimentos_soap
+
+- **Descrição**: recupera os últimos atendimentos SOAP (S/O/A/P) de um paciente específico, incluindo data/hora, profissional e CBO.
+- **Consulta**: somente leitura.
+- **Tabelas/colunas relevantes**:
+  - `tb_atend_prof`: `co_seq_atend_prof` (PK do atendimento profissional), `co_atend` (FK para atendimento), `tp_atend_prof`/`tp_atend` (tipos), `co_lotacao` (lotação do profissional)
+  - `tb_atend`: `co_seq_atend`, `co_prontuario`, `co_unidade_saude`, `dt_inicio` (timestamp para ordenação)
+  - `tb_prontuario`: `co_seq_prontuario`, `co_cidadao` (ligação com paciente)
+  - `tb_evolucao_subjetivo`/`tb_evolucao_objetivo`/`tb_evolucao_avaliacao`/`tb_evolucao_plano`: texto livre das seções SOAP, todas referenciando `co_atend_prof`
+  - `tb_lotacao`/`tb_prof`/`tb_cbo`: enriquecem com nome do profissional e código/descrição do CBO (`co_cbo_2002`)
+- **Filtros suportados**:
+  - `paciente_id` (obrigatório, `co_seq_cidadao`)
+  - `limite` (1–200; default 10)
+- **Guardrails**:
+  - Restringe resultados a profissionais médicos (`225%`) ou enfermeiros (`2235%`) via `co_cbo_2002`.
+  - Ordena do mais recente para o mais antigo pelo `dt_inicio`, com limite máximo de 200 linhas.

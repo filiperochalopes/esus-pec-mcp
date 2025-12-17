@@ -125,7 +125,45 @@
 
         <div class="space-y-3">
           <label class="text-sm text-slate-300" for="prompt">Mensagem</label>
-          <textarea id="prompt" class="input min-h-[104px]" x-model="claudePrompt" placeholder="Pergunte algo e acompanhe os tool calls do Claude" @keydown.enter.meta.prevent="runClaude()" @keydown.enter.ctrl.prevent="runClaude()"></textarea>
+          <div class="relative">
+            <textarea
+              id="prompt"
+              class="input min-h-[104px]"
+              x-model="claudePrompt"
+              placeholder="Pergunte algo e acompanhe os tool calls do Claude"
+              @keydown.enter.meta.prevent="runClaude()"
+              @keydown.enter.ctrl.prevent="runClaude()"
+              @keydown="handlePromptKeydown($event)"
+              @input="handlePromptInput($event)"
+            ></textarea>
+            <template x-if="autoToolMenuOpen">
+              <div class="auto-tool-menu" @click.outside="autoToolMenuOpen = false">
+                <div class="flex items-center justify-between mb-2">
+                  <p class="text-xs text-slate-400">Auto-tool</p>
+                  <button type="button" class="text-[11px] text-slate-400 hover:text-slate-200" @click="autoToolMenuOpen = false">
+                    fechar
+                  </button>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <template x-for="tool in autoTools" :key="tool.id">
+                    <button
+                      type="button"
+                      class="auto-tool-item"
+                      :class="tool.active ? '' : 'auto-tool-item--disabled'"
+                      @click="selectAutoTool(tool)"
+                      :disabled="!tool.active"
+                    >
+                      <div class="flex items-center gap-2">
+                        <span class="font-mono text-sm" x-text="tool.label"></span>
+                        <span class="text-[11px] text-amber-300" x-show="!tool.active">Em breve</span>
+                      </div>
+                      <p class="text-xs text-slate-400" x-text="tool.description"></p>
+                    </button>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-2 sm:gap-3">
               <label class="text-sm text-slate-300">Unidade</label>
@@ -154,7 +192,7 @@
       <template x-if="patientModalOpen">
         <div class="fixed inset-0 z-30 flex items-center justify-center px-6" role="dialog" aria-modal="true">
           <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" @click="closePatientModal()"></div>
-          <div class="relative glass w-full max-w-xl rounded-2xl p-6 space-y-5">
+          <div class="relative glass w-full max-w-2xl rounded-2xl p-6 space-y-5">
             <div class="flex items-center justify-between">
               <div>
                 <h2 class="text-lg font-semibold">
@@ -174,25 +212,91 @@
             </template>
 
             <template x-if="!patientLoading && patientData">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-1">
-                  <p class="text-xs text-slate-400">Nome</p>
-                  <p class="text-base font-semibold" x-text="patientData.name || 'N/A'"></p>
+              <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <p class="text-xs text-slate-400">Nome</p>
+                    <p class="text-base font-semibold" x-text="patientData.name || 'N/A'"></p>
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-xs text-slate-400">Sexo</p>
+                    <p class="text-base font-semibold" x-text="patientData.sex || 'N/A'"></p>
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-xs text-slate-400">Data de nascimento</p>
+                    <p class="text-base font-semibold" x-text="patientData.birth_date || 'N/A'"></p>
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-xs text-slate-400">Idade</p>
+                    <p class="text-base font-semibold" x-text="patientData.age_years != null ? `${patientData.age_years} anos` : 'N/A'"></p>
+                  </div>
                 </div>
-                <div class="space-y-1">
-                  <p class="text-xs text-slate-400">Sexo</p>
-                  <p class="text-base font-semibold" x-text="patientData.sex || 'N/A'"></p>
-                </div>
-                <div class="space-y-1">
-                  <p class="text-xs text-slate-400">Data de nascimento</p>
-                  <p class="text-base font-semibold" x-text="patientData.birth_date || 'N/A'"></p>
-                </div>
-                <div class="space-y-1">
-                  <p class="text-xs text-slate-400">Idade</p>
-                  <p class="text-base font-semibold" x-text="patientData.age_years != null ? `${patientData.age_years} anos` : 'N/A'"></p>
+
+                <div class="border border-slate-800 bg-slate-900/60 rounded-xl p-4 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-xs text-slate-400">Histórico SOAP</p>
+                      <p class="text-sm text-slate-200">Últimos atendimentos</p>
+                    </div>
+                    <span class="text-xs text-slate-400" x-show="patientHistoryLoading">Carregando...</span>
+                  </div>
+                  <p class="text-sm text-rose-200" x-show="patientHistoryError" x-text="patientHistoryError"></p>
+                  <template x-if="!patientHistoryError">
+                    <div class="space-y-3">
+                      <p class="text-sm text-slate-200 whitespace-pre-line" x-text="patientHistorySummary || 'Nenhum atendimento SOAP encontrado.'"></p>
+                      <div class="divide-y divide-slate-800" x-show="patientHistory.length">
+                        <template x-for="item in patientHistory" :key="item.atendimento_id">
+                          <div class="pt-3 space-y-1">
+                            <p class="text-xs text-slate-400">
+                              <span x-text="formatDateTime(item.data_hora)"></span>
+                              <span x-show="item.profissional"> · <span x-text="item.profissional"></span></span>
+                              <span class="text-slate-500" x-show="item.cbo_descricao" x-text="item.cbo_descricao ? ' (' + item.cbo_descricao + ')' : ''"></span>
+                            </p>
+                            <p class="text-xs text-slate-300" x-show="item.soap_s"><span class="font-semibold text-slate-100">S:</span> <span x-text="item.soap_s"></span></p>
+                            <p class="text-xs text-slate-300" x-show="item.soap_o"><span class="font-semibold text-slate-100">O:</span> <span x-text="item.soap_o"></span></p>
+                            <p class="text-xs text-slate-300" x-show="item.soap_a"><span class="font-semibold text-slate-100">A:</span> <span x-text="item.soap_a"></span></p>
+                            <p class="text-xs text-slate-300" x-show="item.soap_p"><span class="font-semibold text-slate-100">P:</span> <span x-text="item.soap_p"></span></p>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </template>
                 </div>
               </div>
             </template>
+          </div>
+        </div>
+      </template>
+
+      <template x-if="autoToolInputOpen">
+        <div class="fixed inset-0 z-40 flex items-center justify-center px-6" role="dialog" aria-modal="true">
+          <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" @click="cancelAutoToolInput()"></div>
+          <div class="relative glass w-full max-w-md rounded-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-slate-400">Auto-tool</p>
+                <h2 class="text-lg font-semibold">/paciente-id</h2>
+              </div>
+              <button type="button" class="btn-ghost" @click="cancelAutoToolInput()">Fechar</button>
+            </div>
+            <p class="text-sm text-slate-300">
+              Informe o id interno do paciente para abrir o modal com dados e histórico SOAP.
+            </p>
+            <label class="space-y-2 text-sm w-full">
+              <span class="text-slate-200">ID do paciente</span>
+              <input
+                class="input"
+                type="number"
+                x-ref="autoToolInput"
+                x-model="autoToolArgument"
+                placeholder="Ex.: 5708"
+                @keydown.enter.prevent="confirmPacienteAutoTool()"
+              />
+            </label>
+            <div class="flex items-center gap-3">
+              <button class="btn-primary" type="button" @click="confirmPacienteAutoTool()">Buscar</button>
+              <p class="text-sm text-rose-200" x-show="autoToolError" x-text="autoToolError"></p>
+            </div>
           </div>
         </div>
       </template>
