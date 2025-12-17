@@ -334,6 +334,7 @@ coorte AS (
         g.co_seq_fat_rel_op_gestante AS gestacao_id,
         fc.co_seq_fat_cidadao_pec,
         fc.co_cidadao,
+        fc.no_cidadao                AS nome_paciente,
         g.dt_inicio_gestacao::date AS dt_inicio_gestacao,
         g.dt_inicio_puerperio::date AS dt_inicio_puerperio,
         g.dt_fim_puerperio::date AS dt_fim_puerperio,
@@ -356,11 +357,16 @@ coorte_unidade AS (
     FROM coorte c
     LEFT JOIN tb_unidade_saude u ON u.nu_cnes = c.nu_cnes
 ),
+coorte_filtrada AS (
+    SELECT *
+    FROM coorte_unidade
+    WHERE (%s IS NULL OR unidade_id = %s)
+),
 consulta_ate_12s AS (
     SELECT
         c.gestacao_id,
         MIN(COALESCE(ai.dt_inicial_atendimento::date, tt.dt_registro)) AS primeira_consulta
-    FROM coorte_unidade c
+    FROM coorte_filtrada c
     JOIN tb_fat_atendimento_individual ai ON ai.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
     JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = ai.co_dim_tempo
     JOIN tb_dim_cbo cbo ON cbo.co_seq_dim_cbo = ai.co_dim_cbo_1
@@ -373,7 +379,7 @@ consultas_total AS (
     SELECT
         c.gestacao_id,
         COUNT(*) AS total_consultas
-    FROM coorte_unidade c
+    FROM coorte_filtrada c
     JOIN tb_fat_atendimento_individual ai ON ai.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
     JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = ai.co_dim_tempo
     WHERE COALESCE(ai.dt_inicial_atendimento::date, tt.dt_registro)
@@ -384,7 +390,7 @@ pressao_eventos AS (
     SELECT DISTINCT
         c.gestacao_id,
         COALESCE(ai.dt_inicial_atendimento::date, tt.dt_registro) AS data_evento
-    FROM coorte_unidade c
+    FROM coorte_filtrada c
     JOIN tb_fat_atendimento_individual ai ON ai.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
     JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = ai.co_dim_tempo
     WHERE COALESCE(ai.dt_inicial_atendimento::date, tt.dt_registro)
@@ -396,7 +402,7 @@ pressao_eventos AS (
     SELECT DISTINCT
         c.gestacao_id,
         tt.dt_registro AS data_evento
-    FROM coorte_unidade c
+    FROM coorte_filtrada c
     JOIN tb_fat_visita_domiciliar vd ON vd.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
     JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = vd.co_dim_tempo
     WHERE tt.dt_registro BETWEEN c.dt_inicio_gestacao AND c.dt_inicio_puerperio
@@ -411,7 +417,7 @@ antropometria_eventos AS (
     SELECT DISTINCT
         c.gestacao_id,
         COALESCE(ai.dt_inicial_atendimento::date, tt.dt_registro) AS data_evento
-    FROM coorte_unidade c
+    FROM coorte_filtrada c
     JOIN tb_fat_atendimento_individual ai ON ai.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
     JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = ai.co_dim_tempo
     WHERE COALESCE(ai.dt_inicial_atendimento::date, tt.dt_registro)
@@ -423,7 +429,7 @@ antropometria_eventos AS (
     SELECT DISTINCT
         c.gestacao_id,
         tt.dt_registro AS data_evento
-    FROM coorte_unidade c
+    FROM coorte_filtrada c
     JOIN tb_fat_visita_domiciliar vd ON vd.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
     JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = vd.co_dim_tempo
     WHERE tt.dt_registro BETWEEN c.dt_inicio_gestacao AND c.dt_inicio_puerperio
@@ -438,7 +444,7 @@ visitas_gestante AS (
     SELECT
         c.gestacao_id,
         COUNT(*) AS total_visitas
-    FROM coorte_unidade c
+    FROM coorte_filtrada c
     JOIN tb_fat_visita_domiciliar vd ON vd.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
     JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = vd.co_dim_tempo
     WHERE tt.dt_registro BETWEEN c.dt_inicio_gestacao AND c.dt_inicio_puerperio
@@ -448,7 +454,7 @@ visitas_gestante AS (
 vacina_dtpa AS (
     SELECT DISTINCT
         c.gestacao_id
-    FROM coorte_unidade c
+    FROM coorte_filtrada c
     JOIN tb_fat_vacinacao v ON v.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
     JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = v.co_dim_tempo
     JOIN tb_fat_vacinacao_vacina vv ON vv.co_fat_vacinacao = v.co_seq_fat_vacinacao
@@ -501,8 +507,229 @@ GROUP BY s.unidade_id, s.unidade_cnes, s.unidade_nome
 ORDER BY c3_score DESC NULLS LAST, s.unidade_nome;
 """
 
+_SQL_SAUDE_360_C3_DETAIL_TEMPLATE = """
+WITH params AS (
+    SELECT %s::date AS start_date, %s::date AS end_date
+),
+unidade_eventos AS (
+    SELECT ai.co_fat_cidadao_pec, dus.nu_cnes, COUNT(*) AS freq
+    FROM params p
+    JOIN tb_fat_atendimento_individual ai ON ai.co_fat_cidadao_pec IS NOT NULL
+    JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = ai.co_dim_tempo
+    LEFT JOIN tb_dim_unidade_saude dus ON dus.co_seq_dim_unidade_saude = ai.co_dim_unidade_saude_1
+    WHERE COALESCE(ai.dt_inicial_atendimento::date, tt.dt_registro) BETWEEN p.start_date AND p.end_date
+      AND dus.nu_cnes IS NOT NULL
+    GROUP BY ai.co_fat_cidadao_pec, dus.nu_cnes
 
-def _calc_saude_360_c3(start_date: Optional[date], end_date: Optional[date]) -> Dict[str, Any]:
+    UNION ALL
+
+    SELECT vd.co_fat_cidadao_pec, dus.nu_cnes, COUNT(*) AS freq
+    FROM params p
+    JOIN tb_fat_visita_domiciliar vd ON vd.co_fat_cidadao_pec IS NOT NULL
+    JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = vd.co_dim_tempo
+    LEFT JOIN tb_dim_unidade_saude dus ON dus.co_seq_dim_unidade_saude = vd.co_dim_unidade_saude
+    WHERE tt.dt_registro BETWEEN p.start_date AND p.end_date
+      AND dus.nu_cnes IS NOT NULL
+    GROUP BY vd.co_fat_cidadao_pec, dus.nu_cnes
+
+    UNION ALL
+
+    SELECT v.co_fat_cidadao_pec, dus.nu_cnes, COUNT(*) AS freq
+    FROM params p
+    JOIN tb_fat_vacinacao v ON v.co_fat_cidadao_pec IS NOT NULL
+    JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = v.co_dim_tempo
+    LEFT JOIN tb_dim_unidade_saude dus ON dus.co_seq_dim_unidade_saude = v.co_dim_unidade_saude
+    WHERE COALESCE(v.dt_inicial_atendimento::date, tt.dt_registro) BETWEEN p.start_date AND p.end_date
+      AND dus.nu_cnes IS NOT NULL
+    GROUP BY v.co_fat_cidadao_pec, dus.nu_cnes
+),
+unidade_inferida AS (
+    SELECT
+        co_fat_cidadao_pec,
+        (
+            SELECT nu_cnes
+            FROM unidade_eventos ue2
+            WHERE ue2.co_fat_cidadao_pec = ue.co_fat_cidadao_pec
+            GROUP BY nu_cnes
+            ORDER BY SUM(freq) DESC
+            LIMIT 1
+        ) AS nu_cnes
+    FROM unidade_eventos ue
+    GROUP BY co_fat_cidadao_pec
+),
+coorte AS (
+    SELECT DISTINCT ON (fc.co_cidadao)
+        g.co_seq_fat_rel_op_gestante AS gestacao_id,
+        fc.co_seq_fat_cidadao_pec,
+        fc.co_cidadao,
+        fc.no_cidadao                AS nome_paciente,
+        g.dt_inicio_gestacao::date AS dt_inicio_gestacao,
+        g.dt_inicio_puerperio::date AS dt_inicio_puerperio,
+        g.dt_fim_puerperio::date AS dt_fim_puerperio,
+        COALESCE(dus.nu_cnes, ui.nu_cnes) AS nu_cnes
+    FROM params p
+    JOIN tb_fat_rel_op_gestante g
+      ON daterange(g.dt_inicio_gestacao, g.dt_fim_puerperio, '[]')
+         && daterange(p.start_date, p.end_date, '[]')
+    JOIN tb_fat_cidadao_pec fc ON fc.co_seq_fat_cidadao_pec = g.co_fat_cidadao_pec
+    LEFT JOIN tb_dim_unidade_saude dus ON dus.co_seq_dim_unidade_saude = fc.co_dim_unidade_saude_vinc
+    LEFT JOIN unidade_inferida ui ON ui.co_fat_cidadao_pec = fc.co_seq_fat_cidadao_pec
+    WHERE COALESCE(dus.nu_cnes, ui.nu_cnes) IS NOT NULL
+    ORDER BY fc.co_cidadao, g.dt_inicio_gestacao DESC
+),
+coorte_unidade AS (
+    SELECT
+        c.*,
+        u.co_seq_unidade_saude AS unidade_id,
+        u.no_unidade_saude
+    FROM coorte c
+    LEFT JOIN tb_unidade_saude u ON u.nu_cnes = c.nu_cnes
+),
+coorte_filtrada AS (
+    SELECT *
+    FROM coorte_unidade
+    WHERE (%s IS NULL OR unidade_id = %s)
+),
+consulta_ate_12s AS (
+    SELECT
+        c.gestacao_id,
+        MIN(COALESCE(ai.dt_inicial_atendimento::date, tt.dt_registro)) AS primeira_consulta
+    FROM coorte_filtrada c
+    JOIN tb_fat_atendimento_individual ai ON ai.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
+    JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = ai.co_dim_tempo
+    JOIN tb_dim_cbo cbo ON cbo.co_seq_dim_cbo = ai.co_dim_cbo_1
+    WHERE (cbo.nu_cbo LIKE '225%%' OR cbo.nu_cbo LIKE '2235%%')
+      AND COALESCE(ai.dt_inicial_atendimento::date, tt.dt_registro)
+          BETWEEN c.dt_inicio_gestacao AND LEAST(c.dt_inicio_gestacao + INTERVAL '84 days', c.dt_fim_puerperio)
+    GROUP BY c.gestacao_id
+),
+consultas_total AS (
+    SELECT
+        c.gestacao_id,
+        COUNT(*) AS total_consultas
+    FROM coorte_filtrada c
+    JOIN tb_fat_atendimento_individual ai ON ai.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
+    JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = ai.co_dim_tempo
+    WHERE COALESCE(ai.dt_inicial_atendimento::date, tt.dt_registro)
+          BETWEEN c.dt_inicio_gestacao AND c.dt_inicio_puerperio
+    GROUP BY c.gestacao_id
+),
+pressao_eventos AS (
+    SELECT DISTINCT
+        c.gestacao_id,
+        COALESCE(ai.dt_inicial_atendimento::date, tt.dt_registro) AS data_evento
+    FROM coorte_filtrada c
+    JOIN tb_fat_atendimento_individual ai ON ai.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
+    JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = ai.co_dim_tempo
+    WHERE COALESCE(ai.dt_inicial_atendimento::date, tt.dt_registro)
+          BETWEEN c.dt_inicio_gestacao AND c.dt_inicio_puerperio
+      AND (ai.nu_pressao_sistolica IS NOT NULL OR ai.nu_pressao_diastolica IS NOT NULL)
+
+    UNION
+
+    SELECT DISTINCT
+        c.gestacao_id,
+        tt.dt_registro AS data_evento
+    FROM coorte_filtrada c
+    JOIN tb_fat_visita_domiciliar vd ON vd.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
+    JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = vd.co_dim_tempo
+    WHERE tt.dt_registro BETWEEN c.dt_inicio_gestacao AND c.dt_inicio_puerperio
+      AND NULLIF(TRIM(vd.nu_medicao_pressao_arterial), '') IS NOT NULL
+),
+pressao_count AS (
+    SELECT gestacao_id, COUNT(*) AS total_pa
+    FROM pressao_eventos
+    GROUP BY gestacao_id
+),
+antropometria_eventos AS (
+    SELECT DISTINCT
+        c.gestacao_id,
+        COALESCE(ai.dt_inicial_atendimento::date, tt.dt_registro) AS data_evento
+    FROM coorte_filtrada c
+    JOIN tb_fat_atendimento_individual ai ON ai.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
+    JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = ai.co_dim_tempo
+    WHERE COALESCE(ai.dt_inicial_atendimento::date, tt.dt_registro)
+          BETWEEN c.dt_inicio_gestacao AND c.dt_inicio_puerperio
+      AND ai.nu_peso IS NOT NULL AND ai.nu_altura IS NOT NULL
+
+    UNION
+
+    SELECT DISTINCT
+        c.gestacao_id,
+        tt.dt_registro AS data_evento
+    FROM coorte_filtrada c
+    JOIN tb_fat_visita_domiciliar vd ON vd.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
+    JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = vd.co_dim_tempo
+    WHERE tt.dt_registro BETWEEN c.dt_inicio_gestacao AND c.dt_inicio_puerperio
+      AND vd.nu_peso IS NOT NULL AND vd.nu_altura IS NOT NULL
+),
+antropometria_count AS (
+    SELECT gestacao_id, COUNT(*) AS total_antropometria
+    FROM antropometria_eventos
+    GROUP BY gestacao_id
+),
+visitas_gestante AS (
+    SELECT
+        c.gestacao_id,
+        COUNT(*) AS total_visitas
+    FROM coorte_filtrada c
+    JOIN tb_fat_visita_domiciliar vd ON vd.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
+    JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = vd.co_dim_tempo
+    WHERE tt.dt_registro BETWEEN c.dt_inicio_gestacao AND c.dt_inicio_puerperio
+      AND vd.st_acomp_gestante = 1
+    GROUP BY c.gestacao_id
+),
+vacina_dtpa AS (
+    SELECT DISTINCT
+        c.gestacao_id
+    FROM coorte_filtrada c
+    JOIN tb_fat_vacinacao v ON v.co_fat_cidadao_pec = c.co_seq_fat_cidadao_pec
+    JOIN tb_dim_tempo tt ON tt.co_seq_dim_tempo = v.co_dim_tempo
+    JOIN tb_fat_vacinacao_vacina vv ON vv.co_fat_vacinacao = v.co_seq_fat_vacinacao
+    JOIN tb_dim_imunobiologico im ON im.co_seq_dim_imunobiologico = vv.co_dim_imunobiologico
+    WHERE im.nu_identificador = '57'
+      AND COALESCE(v.dt_inicial_atendimento::date, tt.dt_registro)
+          BETWEEN c.dt_inicio_gestacao + INTERVAL '140 days' AND c.dt_inicio_puerperio
+),
+detalhes AS (
+    SELECT
+        c.gestacao_id,
+        c.co_cidadao AS paciente_id,
+        c.nome_paciente,
+        c.unidade_id,
+        c.nu_cnes AS unidade_cnes,
+        COALESCE(c.no_unidade_saude, 'Unidade ' || COALESCE(c.nu_cnes, 'N/A')) AS unidade_nome,
+        c.dt_inicio_gestacao,
+        c.dt_inicio_puerperio,
+        a.primeira_consulta,
+        COALESCE(b.total_consultas, 0) AS total_consultas,
+        COALESCE(pc.total_pa, 0) AS total_pa,
+        COALESCE(an.total_antropometria, 0) AS total_antropometria,
+        COALESCE(vg.total_visitas, 0) AS total_visitas,
+        CASE WHEN f.gestacao_id IS NOT NULL THEN 1 ELSE 0 END AS hit_f
+    FROM coorte_filtrada c
+    LEFT JOIN consulta_ate_12s a ON a.gestacao_id = c.gestacao_id
+    LEFT JOIN consultas_total b ON b.gestacao_id = c.gestacao_id
+    LEFT JOIN pressao_count pc ON pc.gestacao_id = c.gestacao_id
+    LEFT JOIN antropometria_count an ON an.gestacao_id = c.gestacao_id
+    LEFT JOIN visitas_gestante vg ON vg.gestacao_id = c.gestacao_id
+    LEFT JOIN vacina_dtpa f ON f.gestacao_id = c.gestacao_id
+)
+SELECT
+    d.*,
+    COUNT(*) OVER() AS total_rows
+FROM detalhes d
+WHERE {where_clause}
+ORDER BY d.unidade_nome, d.nome_paciente
+LIMIT %s OFFSET %s;
+"""
+
+
+def _calc_saude_360_c3(
+    start_date: Optional[date],
+    end_date: Optional[date],
+    unidade_id: Optional[int] = None,
+) -> Dict[str, Any]:
     """
     Calcula o indicador C3 (gestante/puérpera) agrupado por unidade, sem usar LLM.
     """
@@ -517,7 +744,8 @@ def _calc_saude_360_c3(start_date: Optional[date], end_date: Optional[date]) -> 
     apply_db_config(cfg)
     conn = get_connection()
     try:
-        rows = query_all(conn, _SQL_SAUDE_360_C3, [start, end])
+        unit_param = int(unidade_id) if unidade_id is not None else None
+        rows = query_all(conn, _SQL_SAUDE_360_C3, [start, end, unit_param, unit_param])
     finally:
         conn.close()
 
@@ -550,6 +778,86 @@ def _calc_saude_360_c3(start_date: Optional[date], end_date: Optional[date]) -> 
         "period": {"start_date": start.isoformat(), "end_date": end.isoformat()},
         "coorte_total": coorte_total,
         "unidades": unidades,
+    }
+
+
+def _calc_saude_360_c3_detail(
+    component: str,
+    start_date: Optional[date],
+    end_date: Optional[date],
+    unidade_id: Optional[int],
+    page: int,
+    page_size: int,
+) -> Dict[str, Any]:
+    """
+    Retorna pacientes/gestações em déficit para um componente (A-F) do C3 em uma unidade.
+    """
+
+    today = date.today()
+    start = start_date or (today - timedelta(days=365))
+    end = end_date or today
+    if start > end:
+        raise HTTPException(status_code=400, detail="start_date não pode ser maior que end_date.")
+
+    comp = component.upper()
+    where_map = {
+        "A": "d.primeira_consulta IS NULL",
+        "B": "d.total_consultas < 7",
+        "C": "d.total_pa < 7",
+        "D": "d.total_antropometria < 7",
+        "E": "d.total_visitas < 3",
+        "F": "d.hit_f = 0",
+    }
+    if comp not in where_map:
+        raise HTTPException(status_code=400, detail="Componente inválido (use A, B, C, D, E ou F).")
+
+    safe_page_size = max(1, min(int(page_size), 200))
+    safe_page = max(1, int(page))
+    offset = (safe_page - 1) * safe_page_size
+
+    sql = _SQL_SAUDE_360_C3_DETAIL_TEMPLATE.format(where_clause=where_map[comp])
+    unit_param = int(unidade_id) if unidade_id is not None else None
+
+    cfg = load_db_config()
+    apply_db_config(cfg)
+    conn = get_connection()
+    try:
+        rows = query_all(conn, sql, [start, end, unit_param, unit_param, safe_page_size, offset])
+    finally:
+        conn.close()
+
+    total_rows = rows[0]["total_rows"] if rows else 0
+    results = []
+    for row in rows:
+        results.append(
+            {
+                "paciente_id": row.get("paciente_id"),
+                "nome": row.get("nome_paciente"),
+                "gestacao_id": row.get("gestacao_id"),
+                "unidade_id": row.get("unidade_id"),
+                "unidade_cnes": row.get("unidade_cnes"),
+                "unidade_nome": row.get("unidade_nome"),
+                "dt_inicio_gestacao": _to_iso_date(row.get("dt_inicio_gestacao")),
+                "dt_inicio_puerperio": _to_iso_date(row.get("dt_inicio_puerperio")),
+                "primeira_consulta": _to_iso_date(row.get("primeira_consulta")),
+                "total_consultas": int(row.get("total_consultas", 0) or 0),
+                "total_pa": int(row.get("total_pa", 0) or 0),
+                "total_antropometria": int(row.get("total_antropometria", 0) or 0),
+                "total_visitas": int(row.get("total_visitas", 0) or 0),
+                "tem_dtpa": bool(row.get("hit_f")),
+            }
+        )
+
+    total_pages = (total_rows + safe_page_size - 1) // safe_page_size if total_rows else 0
+    return {
+        "component": comp,
+        "period": {"start_date": start.isoformat(), "end_date": end.isoformat()},
+        "unidade_id": unidade_id,
+        "page": safe_page,
+        "page_size": safe_page_size,
+        "total": int(total_rows),
+        "total_pages": int(total_pages),
+        "results": results,
     }
 
 
@@ -676,12 +984,33 @@ async def api_get_paciente_condicoes(paciente_id: int, limite: int = 200):
 async def api_saude_360_c3(
     start_date: Optional[date] = Query(None, description="Data inicial (YYYY-MM-DD); default últimos 12 meses."),
     end_date: Optional[date] = Query(None, description="Data final (YYYY-MM-DD); default hoje."),
+    unidade_id: Optional[int] = Query(None, description="Filtra por unidade (co_seq_unidade_saude)."),
 ):
     try:
-        result = await run_in_threadpool(_calc_saude_360_c3, start_date, end_date)
+        result = await run_in_threadpool(_calc_saude_360_c3, start_date, end_date, unidade_id)
     except HTTPException:
         raise
     except Exception as exc:  # pragma: no cover - depende do banco/tool
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return result
+
+
+@app.get("/saude-360/c3/{component}")
+async def api_saude_360_c3_component(
+    component: str,
+    start_date: Optional[date] = Query(None, description="Data inicial (YYYY-MM-DD); default últimos 12 meses."),
+    end_date: Optional[date] = Query(None, description="Data final (YYYY-MM-DD); default hoje."),
+    unidade_id: Optional[int] = Query(None, description="Filtra por unidade (co_seq_unidade_saude)."),
+    page: int = Query(1, ge=1, description="Página (1-n)."),
+    page_size: int = Query(25, ge=1, le=200, description="Tamanho da página (1-200)."),
+):
+    try:
+        result = await run_in_threadpool(
+            _calc_saude_360_c3_detail, component, start_date, end_date, unidade_id, page, page_size
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:  # pragma: no cover
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return result
 

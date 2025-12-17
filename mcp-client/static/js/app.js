@@ -120,6 +120,85 @@ const createMcpConsole = () => ({
     password: '',
     ...readInitialConfig(),
   },
+
+  componentLabel(letter) {
+    const map = {
+      A: 'A — 1ª consulta até 12ª semana',
+      B: 'B — ≥7 consultas no pré-natal',
+      C: 'C — ≥7 aferições de PA',
+      D: 'D — ≥7 registros peso+altura',
+      E: 'E — ≥3 visitas domiciliares gestante',
+      F: 'F — dTpa após 20ª semana',
+    }
+    return map[letter] || letter
+  },
+
+  async loadSaude360Detail(component, unidade) {
+    this.saude360DetailError = null
+    this.saude360DetailLoading = true
+    this.saude360DetailComponent = component
+    this.saude360DetailUnit = unidade || null
+    this.saude360DetailOpen = true
+    const params = new URLSearchParams()
+    if (this.saude360Filters.startDate) params.set('start_date', this.saude360Filters.startDate)
+    if (this.saude360Filters.endDate) params.set('end_date', this.saude360Filters.endDate)
+    if (unidade?.unidade_id) params.set('unidade_id', unidade.unidade_id)
+    params.set('page', (this.saude360DetailData?.page || 1).toString())
+    params.set('page_size', (this.saude360DetailData?.page_size || 25).toString())
+    try {
+      const res = await fetch(`/saude-360/c3/${component}?${params.toString()}`)
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data?.detail || 'Falha ao carregar detalhes')
+      }
+      this.saude360DetailData = data
+    } catch (err) {
+      this.saude360DetailError = err.message
+    } finally {
+      this.saude360DetailLoading = false
+    }
+  },
+
+  async openSaude360Detail(component, unidade) {
+    this.saude360DetailData = { page: 1, page_size: 25 }
+    await this.loadSaude360Detail(component, unidade)
+  },
+
+  async detailPrevPage() {
+    if (!this.saude360DetailData || this.saude360DetailLoading) return
+    if (this.saude360DetailData.page <= 1) return
+    this.saude360DetailData.page -= 1
+    await this.loadSaude360Detail(this.saude360DetailComponent, this.saude360DetailUnit)
+  },
+
+  async detailNextPage() {
+    if (!this.saude360DetailData || this.saude360DetailLoading) return
+    const totalPages = this.saude360DetailData.total_pages || 0
+    if (totalPages && this.saude360DetailData.page >= totalPages) return
+    this.saude360DetailData.page += 1
+    await this.loadSaude360Detail(this.saude360DetailComponent, this.saude360DetailUnit)
+  },
+
+  detailInfo(component, item) {
+    switch (component) {
+      case 'A':
+        return item.primeira_consulta
+          ? `Primeira consulta em ${item.primeira_consulta}`
+          : 'Sem 1ª consulta até 12ª semana'
+      case 'B':
+        return `Consultas registradas: ${item.total_consultas}/7`
+      case 'C':
+        return `PA registradas: ${item.total_pa}/7`
+      case 'D':
+        return `Peso+altura: ${item.total_antropometria}/7`
+      case 'E':
+        return `Visitas gestante: ${item.total_visitas}/3`
+      case 'F':
+        return item.tem_dtpa ? 'dTpa registrada' : 'Sem dTpa ≥20ª semana'
+      default:
+        return ''
+    }
+  },
   claudeApiKey: readClaudeDefaults().api_key || '',
   claudeModel: readClaudeDefaults().model || 'claude-3-5-sonnet-20241022',
   claudePrompt: '',
@@ -176,6 +255,12 @@ const createMcpConsole = () => ({
     startDate: '',
     endDate: '',
   },
+  saude360DetailOpen: false,
+  saude360DetailLoading: false,
+  saude360DetailError: null,
+  saude360DetailData: null,
+  saude360DetailComponent: null,
+  saude360DetailUnit: null,
   toolsModalOpen: false,
   toolsInfo: [
     {
@@ -259,7 +344,13 @@ const createMcpConsole = () => ({
 
   saude360Rows() {
     if (!this.saude360Data || !Array.isArray(this.saude360Data.unidades)) return []
-    return [...this.saude360Data.unidades].sort((a, b) => {
+    const rows = [...this.saude360Data.unidades]
+    const selected = this.unidadeSelecionada
+    const filtered =
+      selected && selected !== 'all'
+        ? rows.filter((r) => String(r.unidade_id) === String(selected))
+        : rows
+    return filtered.sort((a, b) => {
       const av = Number(a?.score_c3 || 0)
       const bv = Number(b?.score_c3 || 0)
       return bv - av
@@ -399,6 +490,9 @@ const createMcpConsole = () => ({
     const params = new URLSearchParams()
     if (this.saude360Filters.startDate) params.set('start_date', this.saude360Filters.startDate)
     if (this.saude360Filters.endDate) params.set('end_date', this.saude360Filters.endDate)
+    if (this.unidadeSelecionada && this.unidadeSelecionada !== 'all') {
+      params.set('unidade_id', this.unidadeSelecionada)
+    }
     const qs = params.toString()
     try {
       const res = await fetch(`/saude-360/c3${qs ? `?${qs}` : ''}`)
@@ -419,6 +513,9 @@ const createMcpConsole = () => ({
   closeSaude360Modal() {
     this.saude360ModalOpen = false
     this.saude360Error = null
+    this.saude360DetailOpen = false
+    this.saude360DetailData = null
+    this.saude360DetailError = null
   },
 
   async saveConfig() {

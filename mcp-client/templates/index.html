@@ -431,7 +431,7 @@
               </div>
             </div>
 
-            <p class="text-sm text-rose-200" x-show="saude360Error" x-text="saude360Error"></p>
+                <p class="text-sm text-rose-200" x-show="saude360Error" x-text="saude360Error"></p>
             <div class="text-sm text-slate-300 flex items-center gap-2" x-show="saude360Loading">
               <span class="h-5 w-5 rounded-full border-2 border-slate-500 border-t-transparent animate-spin"></span>
               Calculando indicador...
@@ -470,12 +470,42 @@
                             <td class="px-4 py-3" x-text="row.cnes || '—'"></td>
                             <td class="px-4 py-3 font-semibold" x-text="row.gestacoes"></td>
                             <td class="px-4 py-3 font-semibold" :class="scoreClass(row.score_c3)" x-text="formatScore(row.score_c3)"></td>
-                            <td class="px-4 py-3" x-text="row.componentes?.a_primeira_consulta_ate_12s ?? 0"></td>
-                            <td class="px-4 py-3" x-text="row.componentes?.b_consultas_7_ou_mais ?? 0"></td>
-                            <td class="px-4 py-3" x-text="row.componentes?.c_pressao_arterial_7 ?? 0"></td>
-                            <td class="px-4 py-3" x-text="row.componentes?.d_peso_altura_7 ?? 0"></td>
-                            <td class="px-4 py-3" x-text="row.componentes?.e_visitas_gestante_3 ?? 0"></td>
-                            <td class="px-4 py-3" x-text="row.componentes?.f_dtpa_apos_20s ?? 0"></td>
+                            <td class="px-4 py-3">
+                              <button type="button" class="text-left hover:underline underline-offset-4"
+                                @click="openSaude360Detail('A', row)">
+                                <span x-text="row.componentes?.a_primeira_consulta_ate_12s ?? 0"></span>
+                              </button>
+                            </td>
+                            <td class="px-4 py-3">
+                              <button type="button" class="text-left hover:underline underline-offset-4"
+                                @click="openSaude360Detail('B', row)">
+                                <span x-text="row.componentes?.b_consultas_7_ou_mais ?? 0"></span>
+                              </button>
+                            </td>
+                            <td class="px-4 py-3">
+                              <button type="button" class="text-left hover:underline underline-offset-4"
+                                @click="openSaude360Detail('C', row)">
+                                <span x-text="row.componentes?.c_pressao_arterial_7 ?? 0"></span>
+                              </button>
+                            </td>
+                            <td class="px-4 py-3">
+                              <button type="button" class="text-left hover:underline underline-offset-4"
+                                @click="openSaude360Detail('D', row)">
+                                <span x-text="row.componentes?.d_peso_altura_7 ?? 0"></span>
+                              </button>
+                            </td>
+                            <td class="px-4 py-3">
+                              <button type="button" class="text-left hover:underline underline-offset-4"
+                                @click="openSaude360Detail('E', row)">
+                                <span x-text="row.componentes?.e_visitas_gestante_3 ?? 0"></span>
+                              </button>
+                            </td>
+                            <td class="px-4 py-3">
+                              <button type="button" class="text-left hover:underline underline-offset-4"
+                                @click="openSaude360Detail('F', row)">
+                                <span x-text="row.componentes?.f_dtpa_apos_20s ?? 0"></span>
+                              </button>
+                            </td>
                           </tr>
                         </template>
                       </tbody>
@@ -485,8 +515,107 @@
                 <p class="text-sm text-slate-300" x-show="saude360Data && (!saude360Data.unidades || !saude360Data.unidades.length)">
                   Nenhum resultado para o período selecionado.
                 </p>
+
+                <p class="text-xs text-slate-400 mt-2">Clique nos números das colunas A–F para ver pacientes em déficit.</p>
+
+                <div class="mt-3 space-y-2 text-sm text-slate-200">
+                  <p class="font-semibold">Legenda A–F</p>
+                  <ul class="list-disc list-inside text-slate-300 space-y-1">
+                    <li><span class="font-semibold">A</span>: 1ª consulta por médico/enfermeiro até a 12ª semana.</li>
+                    <li><span class="font-semibold">B</span>: Pelo menos 7 consultas durante a gestação.</li>
+                    <li><span class="font-semibold">C</span>: Pelo menos 7 aferições de pressão arterial.</li>
+                    <li><span class="font-semibold">D</span>: Pelo menos 7 registros simultâneos de peso e altura.</li>
+                    <li><span class="font-semibold">E</span>: Pelo menos 3 visitas domiciliares para gestante.</li>
+                    <li><span class="font-semibold">F</span>: Registro da vacina dTpa a partir da 20ª semana.</li>
+                  </ul>
+                </div>
               </div>
             </template>
+          </div>
+        </div>
+      </template>
+
+      <template x-if="saude360DetailOpen">
+        <div class="fixed inset-0 z-40 flex items-center justify-center px-6" role="dialog" aria-modal="true">
+          <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" @click="saude360DetailOpen = false"></div>
+          <div class="relative glass modal-card w-full max-w-4xl rounded-2xl p-6 space-y-5">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-slate-400">Saúde 360 · C.3</p>
+                <h3 class="text-lg font-semibold" x-text="componentLabel(saude360DetailComponent || '')"></h3>
+                <p class="text-sm text-slate-300">
+                  Unidade:
+                  <span class="font-semibold" x-text="saude360DetailUnit?.nome || 'Selecionada'"></span>
+                </p>
+              </div>
+              <button type="button" class="btn-ghost" @click="saude360DetailOpen = false">Fechar</button>
+            </div>
+
+            <p class="text-sm text-rose-200" x-show="saude360DetailError" x-text="saude360DetailError"></p>
+            <div class="text-sm text-slate-300 flex items-center gap-2" x-show="saude360DetailLoading">
+              <span class="h-5 w-5 rounded-full border-2 border-slate-500 border-t-transparent animate-spin"></span>
+              Carregando pacientes em déficit...
+            </div>
+
+            <template x-if="!saude360DetailLoading">
+              <div>
+                <template
+                  x-if="saude360DetailData && saude360DetailData.results && saude360DetailData.results.length">
+                  <div class="overflow-auto border border-slate-800 rounded-xl">
+                    <table class="min-w-full text-sm">
+                      <thead class="bg-slate-900/60">
+                        <tr class="text-left text-slate-200">
+                          <th class="px-4 py-3">Paciente</th>
+                          <th class="px-4 py-3">Gestação</th>
+                          <th class="px-4 py-3">Info</th>
+                          <th class="px-4 py-3">Gestação / Puerpério</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template x-for="item in saude360DetailData.results" :key="`${item.gestacao_id}-${item.paciente_id}`">
+                          <tr class="border-t border-slate-800">
+                            <td class="px-4 py-3">
+                              <p class="font-semibold" x-text="item.nome || 'Paciente'"></p>
+                              <p class="text-xs text-slate-400">@<span x-text="item.paciente_id"></span></p>
+                            </td>
+                            <td class="px-4 py-3">
+                              <p class="font-semibold" x-text="item.gestacao_id"></p>
+                              <p class="text-xs text-slate-400" x-text="item.unidade_cnes || ''"></p>
+                            </td>
+                            <td class="px-4 py-3" x-text="detailInfo(saude360DetailComponent, item)"></td>
+                            <td class="px-4 py-3 text-xs text-slate-300">
+                              <div x-show="item.dt_inicio_gestacao">Início gestação: <span x-text="item.dt_inicio_gestacao"></span></div>
+                              <div x-show="item.dt_inicio_puerperio">Início puerpério: <span x-text="item.dt_inicio_puerperio"></span></div>
+                            </td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
+                </template>
+                <p class="text-sm text-slate-300"
+                  x-show="saude360DetailData && (!saude360DetailData.results || !saude360DetailData.results.length)">
+                  Nenhum paciente em déficit para este componente.
+                </p>
+              </div>
+            </template>
+
+            <div class="flex items-center justify-between text-sm text-slate-300">
+              <p>
+                Página
+                <span class="font-semibold" x-text="saude360DetailData?.page || 1"></span>
+                /
+                <span class="font-semibold" x-text="saude360DetailData?.total_pages || 1"></span>
+              </p>
+              <div class="flex items-center gap-2">
+                <button type="button" class="btn-ghost px-3" @click="detailPrevPage()" :disabled="saude360DetailLoading || (saude360DetailData?.page || 1) <= 1">
+                  Prev
+                </button>
+                <button type="button" class="btn-ghost px-3" @click="detailNextPage()" :disabled="saude360DetailLoading || (saude360DetailData?.total_pages || 1) <= (saude360DetailData?.page || 1)">
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </template>
