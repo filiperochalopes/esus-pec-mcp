@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b1220" />
   <title>PEC MCP • Console</title>
+  <link rel="icon" type="image/svg+xml" href="/static/img/pec-mcp-logo.svg" />
+  <link rel="alternate icon" type="image/x-icon" href="/static/img/favicon.ico" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/css/styles.css" />
   <script id="initial-config" type="application/json">{{ initial_config_json | safe }}</script>
@@ -19,13 +21,16 @@
     <main class="max-w-5xl mx-auto px-6 py-8" x-data="mcpConsole" x-cloak>
       <header class="flex items-center justify-between gap-4">
         <div class="space-y-2">
+          <div class="flex items-center gap-3">
+            <img src="/static/img/pec-mcp-logo.svg" alt="PEC MCP" class="h-10 w-10" />
+            <div>
+              <h1 class="text-2xl font-semibold tracking-tight">PEC MCP · Console</h1>
+              <p class="text-sm text-slate-300">Chat direto com o servidor MCP via StdIO. Tema dark azul.</p>
+            </div>
+          </div>
           <div class="inline-flex items-center gap-2 rounded-full bg-slate-900/70 px-3 py-2 border border-slate-800">
             <span class="h-2 w-2 rounded-full" :class="status === 'connected' ? 'bg-emerald-400' : status === 'error' ? 'bg-rose-400' : 'bg-amber-300'"></span>
             <span class="text-sm" x-text="statusMessage"></span>
-          </div>
-          <div>
-            <h1 class="text-2xl font-semibold tracking-tight">PEC MCP · Console</h1>
-            <p class="text-sm text-slate-300">Chat direto com o servidor MCP via StdIO. Tema dark azul.</p>
           </div>
         </div>
         <button type="button" class="btn-ghost h-12 w-12 flex items-center justify-center text-slate-100" @click="configOpen = true" :aria-pressed="configOpen">
@@ -192,7 +197,7 @@
       <template x-if="patientModalOpen">
         <div class="fixed inset-0 z-30 flex items-center justify-center px-6" role="dialog" aria-modal="true">
           <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" @click="closePatientModal()"></div>
-          <div class="relative glass w-full max-w-2xl rounded-2xl p-6 space-y-5">
+          <div class="relative glass modal-card w-full max-w-2xl rounded-2xl p-6 space-y-5">
             <div class="flex items-center justify-between">
               <div>
                 <h2 class="text-lg font-semibold">
@@ -246,19 +251,74 @@
                       <p class="text-sm text-slate-200 whitespace-pre-line" x-text="patientHistorySummary || 'Nenhum atendimento SOAP encontrado.'"></p>
                       <div class="divide-y divide-slate-800" x-show="patientHistory.length">
                         <template x-for="item in patientHistory" :key="item.atendimento_id">
-                          <div class="pt-3 space-y-1">
-                            <p class="text-xs text-slate-400">
-                              <span x-text="formatDateTime(item.data_hora)"></span>
-                              <span x-show="item.profissional"> · <span x-text="item.profissional"></span></span>
-                              <span class="text-slate-500" x-show="item.cbo_descricao" x-text="item.cbo_descricao ? ' (' + item.cbo_descricao + ')' : ''"></span>
-                            </p>
-                            <p class="text-xs text-slate-300" x-show="item.soap_s"><span class="font-semibold text-slate-100">S:</span> <span x-text="item.soap_s"></span></p>
-                            <p class="text-xs text-slate-300" x-show="item.soap_o"><span class="font-semibold text-slate-100">O:</span> <span x-text="item.soap_o"></span></p>
-                            <p class="text-xs text-slate-300" x-show="item.soap_a"><span class="font-semibold text-slate-100">A:</span> <span x-text="item.soap_a"></span></p>
-                            <p class="text-xs text-slate-300" x-show="item.soap_p"><span class="font-semibold text-slate-100">P:</span> <span x-text="item.soap_p"></span></p>
-                          </div>
+                          <details class="pt-3 space-y-1">
+                            <summary class="flex items-center justify-between text-xs text-slate-400 cursor-pointer">
+                              <span>
+                                <span x-text="formatDateTime(item.data_hora)"></span>
+                                <span x-show="item.profissional"> · <span x-text="item.profissional"></span></span>
+                                <span class="text-slate-500" x-show="item.cbo_descricao || item.cbo_codigo" x-text="item.cbo_descricao ? ' (' + item.cbo_descricao + ')' : item.cbo_codigo ? ' (' + item.cbo_codigo + ')' : ''"></span>
+                              </span>
+                              <span class="text-[11px] text-slate-500">clique para ver</span>
+                            </summary>
+                            <div class="space-y-1 pl-1 pr-1 pb-1">
+                              <p class="text-xs text-slate-300" x-show="item.soap_s_clean"><span class="font-semibold text-slate-100">S:</span> <span x-text="item.soap_s_clean"></span></p>
+                              <p class="text-xs text-slate-300" x-show="item.soap_o_clean"><span class="font-semibold text-slate-100">O:</span> <span x-text="item.soap_o_clean"></span></p>
+                              <p class="text-xs text-slate-300" x-show="item.soap_a_clean"><span class="font-semibold text-slate-100">A:</span> <span x-text="item.soap_a_clean"></span></p>
+                              <p class="text-xs text-slate-300" x-show="item.soap_p_clean"><span class="font-semibold text-slate-100">P:</span> <span x-text="item.soap_p_clean"></span></p>
+                              <template x-if="item.condicoes && item.condicoes.length">
+                                <div class="mt-1 space-y-1">
+                                  <p class="text-[11px] text-slate-400">Condições desta consulta</p>
+                                  <template x-for="c in item.condicoes" :key="c.condition_id || c.cid_code || c.ciap_code">
+                                    <p class="text-[11px] text-slate-300">
+                                      <span class="font-semibold" x-text="c.cid_code || c.ciap_code || 'Sem código'"></span>
+                                      <span class="text-slate-400" x-show="c.cid_description || c.ciap_description">
+                                        - <span x-text="c.cid_description || c.ciap_description"></span>
+                                      </span>
+                                      <span x-show="c.observacao_clean"> · <span x-text="c.observacao_clean"></span></span>
+                                    </p>
+                                  </template>
+                                </div>
+                              </template>
+                            </div>
+                          </details>
                         </template>
                       </div>
+                    </div>
+                  </template>
+                </div>
+
+                <div class="border border-slate-800 bg-slate-900/60 rounded-xl p-4 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-xs text-slate-400">Condições registradas</p>
+                      <p class="text-sm text-slate-200">CID/CIAP e observações</p>
+                    </div>
+                    <span class="text-xs text-slate-400" x-show="patientConditionsLoading">Carregando...</span>
+                  </div>
+                  <p class="text-sm text-rose-200" x-show="patientConditionsError" x-text="patientConditionsError"></p>
+                  <template x-if="!patientConditionsError">
+                    <div class="space-y-2">
+                      <template x-if="patientConditions.length">
+                        <div class="space-y-2">
+                          <template x-for="cond in patientConditions" :key="cond.condition_id">
+                            <div class="rounded-lg border border-slate-800 bg-slate-950/40 p-3 space-y-1">
+                              <p class="text-xs text-slate-300">
+                                <span class="font-semibold text-slate-100" x-text="cond.cid_code || cond.ciap_code || 'Sem código'"></span>
+                                <span class="text-slate-400" x-show="cond.cid_description || cond.ciap_description">
+                                  - <span x-text="cond.cid_description || cond.ciap_description"></span>
+                                </span>
+                              </p>
+                              <p class="text-xs text-slate-400" x-show="cond.observacao_clean">Obs: <span x-text="cond.observacao_clean"></span></p>
+                              <p class="text-[11px] text-slate-500">
+                                <span x-show="cond.dt_inicio_condicao">Início: <span x-text="cond.dt_inicio_condicao"></span></span>
+                                <span x-show="cond.dt_fim_condicao"> · Fim: <span x-text="cond.dt_fim_condicao"></span></span>
+                                <span x-show="cond.situacao_id"> · Situação: <span x-text="cond.situacao_id"></span></span>
+                              </p>
+                            </div>
+                          </template>
+                        </div>
+                      </template>
+                      <p class="text-xs text-slate-400" x-show="!patientConditions.length">Nenhuma condição cadastrada.</p>
                     </div>
                   </template>
                 </div>

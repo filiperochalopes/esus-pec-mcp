@@ -154,6 +154,9 @@ const createMcpConsole = () => ({
   patientHistorySummary: '',
   patientHistoryLoading: false,
   patientHistoryError: null,
+  patientConditions: [],
+  patientConditionsLoading: false,
+  patientConditionsError: null,
 
   init() {
     this.status = 'connected'
@@ -180,6 +183,14 @@ const createMcpConsole = () => ({
 
   renderMarkdown(text) {
     return renderMarkdown(text)
+  },
+
+  stripHtml(text) {
+    if (!text) return ''
+    const div = document.createElement('div')
+    div.innerHTML = String(text)
+    const clean = (div.textContent || div.innerText || '').replace(/\u00a0/g, ' ')
+    return clean.replace(/\s+/g, ' ').trim()
   },
 
   isCollapsible(event) {
@@ -230,7 +241,7 @@ const createMcpConsole = () => ({
     this.autoToolInputOpen = false
     this.autoToolArgument = ''
     this.autoToolError = null
-    await this.showPatientModal(parsed)
+    await this.showPatientModal(parsed, { autoSummarize: true })
   },
 
   handleTimelineClick(event) {
@@ -395,17 +406,24 @@ const createMcpConsole = () => ({
     this.patientHistorySummary = ''
     this.patientHistoryError = null
     this.patientHistoryLoading = false
+    this.patientConditions = []
+    this.patientConditionsError = null
+    this.patientConditionsLoading = false
   },
 
-  async showPatientModal(patientId) {
+  async showPatientModal(patientId, options = {}) {
+    const { autoSummarize = false } = options
     this.patientModalOpen = true
     this.patientLoading = true
     this.patientHistoryLoading = true
+    this.patientConditionsLoading = true
     this.patientError = null
     this.patientHistoryError = null
+    this.patientConditionsError = null
     this.patientData = null
     this.patientHistory = []
     this.patientHistorySummary = ''
+    this.patientConditions = []
     this.patientFocusId = patientId
     try {
       const patientRes = await fetch(`/api/pacientes/${patientId}`)
@@ -421,17 +439,113 @@ const createMcpConsole = () => ({
     }
 
     try {
-      const historyRes = await fetch(`/api/pacientes/${patientId}/historico?limite=8`)
+      const historyRes = await fetch(`/api/pacientes/${patientId}/historico`)
       const historyJson = await historyRes.json()
       if (!historyRes.ok) {
         throw new Error(historyJson?.detail || 'Falha ao carregar histórico SOAP')
       }
-      this.patientHistory = Array.isArray(historyJson.historico) ? historyJson.historico : []
+      this.patientHistory = Array.isArray(historyJson.historico)
+        ? historyJson.historico.map((h) => ({
+            ...h,
+            soap_s_clean: this.stripHtml(h.soap_s),
+            soap_o_clean: this.stripHtml(h.soap_o),
+            soap_a_clean: this.stripHtml(h.soap_a),
+            soap_p_clean: this.stripHtml(h.soap_p),
+            condicoes: Array.isArray(h.condicoes)
+              ? h.condicoes.map((c) => ({
+                  ...c,
+                  observacao_clean: this.stripHtml(c.observacao),
+                }))
+              : [],
+          }))
+        : []
       this.patientHistorySummary = historyJson.resumo || ''
     } catch (err) {
       this.patientHistoryError = err.message
     } finally {
       this.patientHistoryLoading = false
+    }
+
+    try {
+      const condRes = await fetch(`/api/pacientes/${patientId}/condicoes?limite=200`)
+      const condJson = await condRes.json()
+      if (!condRes.ok) {
+        throw new Error(condJson?.detail || 'Falha ao carregar condições')
+      }
+      this.patientConditions = Array.isArray(condJson.condicoes)
+        ? condJson.condicoes.map((c) => ({
+            ...c,
+            observacao_clean: this.stripHtml(c.observacao),
+          }))
+        : []
+    } catch (err) {
+      this.patientConditionsError = err.message
+    } finally {
+      this.patientConditionsLoading = false
+    }
+
+    if (autoSummarize) {
+      this.buildAndSendSummaryPrompt()
+    }
+  },
+
+  buildAndSendSummaryPrompt() {
+    const id = this.patientFocusId
+    if (!id) return
+
+    const historyCompact = this.patientHistory.map((item) => ({
+      data_hora: item.data_hora,
+      profissional: item.profissional,
+      cbo: item.cbo_descricao || item.cbo_codigo,
+      s: item.soap_s_clean || item.soap_s,
+      o: item.soap_o_clean || item.soap_o,
+      a: item.soap_a_clean || item.soap_a,
+      p: item.soap_p_clean || item.soap_p,
+      condicoes: (item.condicoes || []).map((c) => ({
+        condition_id: c.condition_id,
+        cid: c.cid_code,
+        cid_desc: c.cid_description,
+        ciap: c.ciap_code,
+        ciap_desc: c.ciap_description,
+        observacao: c.observacao_clean || c.observacao,
+        inicio: c.dt_inicio_condicao,
+        fim: c.dt_fim_condicao,
+        situacao: c.situacao_id,
+      })),
+    }))
+
+    const condicoesCompact = this.patientConditions.map((c) => ({
+      cid: c.cid_code || null,
+      cid_desc: c.cid_description || null,
+      ciap: c.ciap_code || null,
+      ciap_desc: c.ciap_description || null,
+      inicio: c.dt_inicio_condicao,
+      fim: c.dt_fim_condicao,
+      situacao: c.situacao_id,
+      observacao: c.observacao,
+    }))
+
+    const promptLines = []
+    promptLines.push(`Elabore um resumo clínico conciso do paciente @${id} em até 3 parágrafos, inspirado no International Patient Summary (IPS).`)
+    promptLines.push(
+      'Não use formato SOAP; faça um panorama longitudinal, incluindo problemas/condições (CID/CIAP), alergias/medicações se houver, e plano/cuidados relevantes.'
+    )
+    promptLines.push(
+      "Adicione um bloco curto de 'História recente' descrevendo os últimos encontros (sintomas, avaliações, planos) com base nos dados abaixo. Omitir se não houver dados."
+    )
+    promptLines.push('Use apenas informações fornecidas; seções sem dados não devem aparecer.')
+    promptLines.push('Dados (mais recentes primeiro):')
+    promptLines.push('')
+    promptLines.push('Atendimentos SOAP:')
+    promptLines.push(JSON.stringify(historyCompact, null, 2))
+    promptLines.push('')
+    promptLines.push('Condições registradas:')
+    promptLines.push(JSON.stringify(condicoesCompact, null, 2))
+
+    this.claudePrompt = promptLines.join('\n')
+
+    if (this.claudeApiKey) {
+      this.$nextTick(() => this.runClaude())
     }
   },
 })

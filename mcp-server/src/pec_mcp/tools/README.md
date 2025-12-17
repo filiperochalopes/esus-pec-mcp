@@ -98,9 +98,10 @@
   - `tb_prontuario`: `co_seq_prontuario`, `co_cidadao` (ligação com paciente)
   - `tb_evolucao_subjetivo`/`tb_evolucao_objetivo`/`tb_evolucao_avaliacao`/`tb_evolucao_plano`: texto livre das seções SOAP, todas referenciando `co_atend_prof`
   - `tb_lotacao`/`tb_prof`/`tb_cbo`: enriquecem com nome do profissional e código/descrição do CBO (`co_cbo_2002`)
+  - `tb_problema_evolucao` + `tb_problema` + `tb_cid10`/`tb_ciap`: agregam CID/CIAP ligados ao atendimento (`co_atend_prof`) na mesma resposta
 - **Filtros suportados**:
   - `paciente_id` (obrigatório, `co_seq_cidadao`)
-  - `limite` (1–200; default 10)
+  - `limite` (opcional; 1–1000; sem limite quando não informado)
 - **Guardrails**:
   - Restringe resultados a profissionais médicos (`225%`) ou enfermeiros (`2235%`) via `co_cbo_2002`.
-  - Ordena do mais recente para o mais antigo pelo `dt_inicio`, com limite máximo de 200 linhas.
+  - Ordena do mais recente para o mais antigo pelo `dt_inicio`; quando `limite` não é informado, retorna todos os registros encontrados.

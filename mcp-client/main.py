@@ -9,6 +9,8 @@ import os
 from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import html
+import re
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
@@ -174,16 +176,16 @@ def _load_paciente_by_id(paciente_id: int) -> Dict[str, Any]:
     }
 
 
-def _load_paciente_history(paciente_id: int, limite: int = 8) -> List[Dict[str, Any]]:
+def _load_paciente_history(paciente_id: int, limite: int | None = None) -> List[Dict[str, Any]]:
     """
     Busca últimos atendimentos SOAP via tool MCP.
     """
 
-    safe_limit = max(1, min(int(limite), 200))
+    safe_limit = None if limite is None else max(1, min(int(limite), 1000))
     try:
         payload = call_tool(
             "listar_ultimos_atendimentos_soap",
-            {"paciente_id": int(paciente_id), "limite": safe_limit},
+            {"paciente_id": int(paciente_id), **({"limite": safe_limit} if safe_limit is not None else {})},
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -204,6 +206,14 @@ def _summarize_soap_history(entries: List[Dict[str, Any]]) -> str:
 
     if not entries:
         return "Nenhum atendimento SOAP encontrado para este paciente."
+
+    def _plain(text: Any) -> Optional[str]:
+        if text is None:
+            return None
+        raw = html.unescape(str(text))
+        clean = re.sub(r"<[^>]+>", " ", raw)
+        clean = re.sub(r"\s+", " ", clean).strip()
+        return clean or None
 
     lines: List[str] = []
     total = len(entries)
@@ -226,7 +236,7 @@ def _summarize_soap_history(entries: List[Dict[str, Any]]) -> str:
         snippets: List[str] = []
         seen: set[str] = set()
         for entry in entries:
-            raw = entry.get(key)
+            raw = _plain(entry.get(key))
             if not raw:
                 continue
             text = " ".join(str(raw).split())
@@ -243,6 +253,29 @@ def _summarize_soap_history(entries: List[Dict[str, Any]]) -> str:
             lines.append(f"{label}: " + " | ".join(snippets))
 
     return "\n".join(lines)
+
+
+def _load_paciente_condicoes(paciente_id: int, limite: int = 200) -> List[Dict[str, Any]]:
+    """
+    Busca condições já cadastradas do paciente via tool MCP.
+    """
+
+    safe_limit = max(1, min(int(limite), 200))
+    try:
+        payload = call_tool(
+            "listar_condicoes",
+            {"paciente_id": int(paciente_id), "limite": safe_limit},
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # pragma: no cover - dependente de integração MCP
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    if not payload.get("ok", False):
+        raise HTTPException(status_code=500, detail="Falha ao consultar condições.")
+
+    result = payload.get("result")
+    return result if isinstance(result, list) else []
 
 
 @app.get("/")
@@ -342,7 +375,7 @@ async def api_get_paciente(paciente_id: int):
 
 
 @app.get("/api/pacientes/{paciente_id}/historico")
-async def api_get_paciente_historico(paciente_id: int, limite: int = 8):
+async def api_get_paciente_historico(paciente_id: int, limite: int | None = None):
     try:
         historico = await run_in_threadpool(_load_paciente_history, paciente_id, limite)
         resumo = _summarize_soap_history(historico)
@@ -351,6 +384,17 @@ async def api_get_paciente_historico(paciente_id: int, limite: int = 8):
     except Exception as exc:  # pragma: no cover - depende do banco/tool
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return {"historico": historico, "resumo": resumo}
+
+
+@app.get("/api/pacientes/{paciente_id}/condicoes")
+async def api_get_paciente_condicoes(paciente_id: int, limite: int = 200):
+    try:
+        condicoes = await run_in_threadpool(_load_paciente_condicoes, paciente_id, limite)
+    except HTTPException:
+        raise
+    except Exception as exc:  # pragma: no cover - depende do banco/tool
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return {"condicoes": condicoes}
 
 
 __all__ = ["app"]

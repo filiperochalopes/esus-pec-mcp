@@ -63,6 +63,19 @@ class AtendimentoSOAPResult(TypedDict):
     soap_o: Optional[str]
     soap_a: Optional[str]
     soap_p: Optional[str]
+    condicoes: Optional[list["SOAPCondition"]]
+
+
+class SOAPCondition(TypedDict, total=False):
+    condition_id: Optional[int]
+    cid_code: Optional[str]
+    cid_description: Optional[str]
+    ciap_code: Optional[str]
+    ciap_description: Optional[str]
+    observacao: Optional[str]
+    dt_inicio_condicao: Optional[str]
+    dt_fim_condicao: Optional[str]
+    situacao_id: Optional[str]
 
 
 __all__ = [
@@ -71,4 +84,5 @@ __all__ = [
     "CountResult",
     "HealthUnitResult",
     "AtendimentoSOAPResult",
+    "SOAPCondition",
 ]

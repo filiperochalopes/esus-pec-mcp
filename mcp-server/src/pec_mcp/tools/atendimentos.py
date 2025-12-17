@@ -12,7 +12,7 @@ from ..db import query_all
 from ..models import AtendimentoSOAPResult
 from . import get_db_conn, to_iso_datetime
 
-_SQL_ATENDIMENTOS = """
+_SQL_ATENDIMENTOS_BASE = """
 SELECT
     ap.co_seq_atend_prof          AS atendimento_id,
     pr.co_cidadao                 AS paciente_id,
@@ -25,7 +25,8 @@ SELECT
     es.ds_subjetivo               AS soap_s,
     eo.ds_objetivo                AS soap_o,
     ea.ds_avaliacao               AS soap_a,
-    ep.ds_plano                   AS soap_p
+    ep.ds_plano                   AS soap_p,
+    COALESCE(cond.condicoes, '[]') AS condicoes
 FROM tb_atend_prof ap
 JOIN tb_atend       a   ON a.co_seq_atend       = ap.co_atend
 JOIN tb_prontuario  pr  ON pr.co_seq_prontuario = a.co_prontuario
@@ -36,6 +37,27 @@ LEFT JOIN tb_evolucao_subjetivo es ON es.co_atend_prof = ap.co_seq_atend_prof
 LEFT JOIN tb_evolucao_objetivo  eo ON eo.co_atend_prof = ap.co_seq_atend_prof
 LEFT JOIN tb_evolucao_avaliacao ea ON ea.co_atend_prof = ap.co_seq_atend_prof
 LEFT JOIN tb_evolucao_plano     ep ON ep.co_atend_prof = ap.co_seq_atend_prof
+LEFT JOIN LATERAL (
+    SELECT json_agg(
+        jsonb_build_object(
+            'condition_id', p2.co_seq_problema,
+            'cid_code', cid2.nu_cid10,
+            'cid_description', cid2.no_cid10,
+            'ciap_code', ciap2.co_ciap,
+            'ciap_description', ciap2.ds_ciap,
+            'observacao', pe2.ds_observacao,
+            'dt_inicio_condicao', pe2.dt_inicio_problema,
+            'dt_fim_condicao', pe2.dt_fim_problema,
+            'situacao_id', pe2.co_situacao_problema
+        )
+        ORDER BY pe2.dt_inicio_problema DESC NULLS LAST, p2.co_seq_problema
+    ) AS condicoes
+    FROM tb_problema_evolucao pe2
+    JOIN tb_problema p2 ON p2.co_unico_problema = pe2.co_unico_problema
+    LEFT JOIN tb_cid10 cid2 ON cid2.co_cid10 = p2.co_cid10
+    LEFT JOIN tb_ciap ciap2 ON ciap2.co_seq_ciap = p2.co_ciap
+    WHERE pe2.co_atend_prof = ap.co_seq_atend_prof
+) cond ON TRUE
 WHERE pr.co_cidadao = %s
   AND (
         cb.co_cbo_2002 LIKE '225%%'   -- médicos
@@ -43,12 +65,11 @@ WHERE pr.co_cidadao = %s
      -- OR cb.co_cbo_2002 LIKE '2232%%'  -- dentistas (opcional)
       )
 ORDER BY a.dt_inicio DESC NULLS LAST
-LIMIT %s;
 """
 
 
 def listar_ultimos_atendimentos_soap(
-    ctx: Context, paciente_id: int, limite: int = 10
+    ctx: Context, paciente_id: int, limite: int | None = None
 ) -> List[AtendimentoSOAPResult]:
     """
     Recupera últimos atendimentos SOAP do paciente (médicos e enfermeiros).
@@ -61,9 +82,18 @@ def listar_ultimos_atendimentos_soap(
     if paciente_id_int <= 0:
         raise ValueError("paciente_id deve ser um inteiro positivo.")
 
-    safe_limit = max(1, min(int(limite), 200))
+    safe_limit = None
+    if limite is not None:
+        safe_limit = max(1, min(int(limite), 1000))
+
     conn = get_db_conn(ctx)
-    rows = query_all(conn, _SQL_ATENDIMENTOS, (paciente_id_int, safe_limit))
+    sql = _SQL_ATENDIMENTOS_BASE
+    params = [paciente_id_int]
+    if safe_limit is not None:
+        sql = f"{sql} LIMIT %s"
+        params.append(safe_limit)
+
+    rows = query_all(conn, sql, tuple(params))
 
     results: List[AtendimentoSOAPResult] = []
     for row in rows:
@@ -85,6 +115,7 @@ def listar_ultimos_atendimentos_soap(
                 soap_o=str(row.get("soap_o")) if row.get("soap_o") is not None else None,
                 soap_a=str(row.get("soap_a")) if row.get("soap_a") is not None else None,
                 soap_p=str(row.get("soap_p")) if row.get("soap_p") is not None else None,
+                condicoes=row.get("condicoes") if isinstance(row.get("condicoes"), list) else [],
             )
         )
     return results

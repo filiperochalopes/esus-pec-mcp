@@ -87,9 +87,8 @@ TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
                 "limite": {
                     "type": "integer",
                     "minimum": 1,
-                    "maximum": 200,
-                    "default": 10,
-                    "description": "Quantidade máxima de atendimentos (1-200).",
+                    "maximum": 1000,
+                    "description": "Quantidade máxima de atendimentos (1-1000). Se omitido, retorna todos.",
                 },
             },
             "required": ["paciente_id"],

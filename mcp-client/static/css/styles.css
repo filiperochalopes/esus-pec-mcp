@@ -182,6 +182,18 @@ body {
   outline-offset: 2px;
 }
 
+.modal-card {
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+
+.modal-card details summary {
+  list-style: none;
+}
+.modal-card details summary::-webkit-details-marker {
+  display: none;
+}
+
 .auto-tool-menu {
   position: absolute;
   right: 12px;
