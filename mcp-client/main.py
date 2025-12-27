@@ -882,6 +882,11 @@ async def index(request: Request):
     )
 
 
+@app.get("/help")
+async def help_page(request: Request):
+    return templates.TemplateResponse("help.html", {"request": request})
+
+
 @app.get("/api/config")
 async def get_config():
     cfg = load_db_config()

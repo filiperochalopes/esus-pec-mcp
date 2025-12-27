@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b1220" />
+  <title>PEC MCP • Ajuda</title>
+  <link rel="icon" type="image/svg+xml" href="/static/img/pec-mcp-logo.svg" />
+  <link rel="alternate icon" type="image/x-icon" href="/static/img/favicon.ico" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+
+<body class="bg-slate-950 text-slate-100">
+  <div class="relative min-h-screen overflow-hidden">
+    <div class="hero-shape"></div>
+
+    <main class="max-w-4xl mx-auto px-6 py-10 space-y-8">
+      <header class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <img src="/static/img/pec-mcp-logo.svg" alt="PEC MCP" class="h-10 w-10" />
+          <div>
+            <h1 class="text-2xl font-semibold tracking-tight">PEC MCP · Ajuda</h1>
+            <p class="text-sm text-slate-300">Manual introdutório para uso pela interface.</p>
+          </div>
+        </div>
+        <a href="/" class="btn-ghost px-4">Voltar ao Console</a>
+      </header>
+
+      <section class="glass rounded-2xl p-6 space-y-4">
+        <p class="text-base text-slate-200 leading-relaxed">
+          O <strong>PEC MCP</strong> é uma ferramenta de Inteligência Clínica e Gestão integrada ao
+          <strong>e-SUS PEC</strong>. Ela permite consultar dados do prontuário com linguagem natural,
+          mantendo tudo anonimizado e seguro, sem necessidade de conhecimento técnico.
+        </p>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+            <h2 class="text-sm font-semibold text-slate-100">1) Chat com IA</h2>
+            <p class="text-sm text-slate-300 mt-2">
+              Digite perguntas claras e objetivas. O chat entende melhor quando você informa
+              pelo menos um critério (ID, unidade, sexo, idade, condição ou CID/CIAP).
+            </p>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+            <h2 class="text-sm font-semibold text-slate-100">2) Auto-tools (atalhos)</h2>
+            <p class="text-sm text-slate-300 mt-2">
+              Clique nos atalhos da interface ou digite <span class="font-mono">/</span> no chat.
+              Os auto-tools executam consultas prontas com poucos cliques.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass rounded-2xl p-6 space-y-6">
+        <div>
+          <h2 class="text-lg font-semibold">Exemplos prontos para o chat</h2>
+          <p class="text-sm text-slate-400">Copie e cole, trocando apenas os dados do seu contexto.</p>
+        </div>
+        <div class="grid gap-4 md:grid-cols-3">
+          <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-2">
+            <h3 class="text-sm font-semibold text-slate-100">Assistência clínica</h3>
+            <ul class="text-sm text-slate-300 space-y-2">
+              <li>“Mostre um resumo clínico do paciente de ID 123.”</li>
+              <li>“Quais condições ativas esse paciente possui?”</li>
+              <li>“Quando foi o último atendimento registrado?”</li>
+              <li>“Liste até 3 atendimentos recentes desse paciente.”</li>
+            </ul>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-2">
+            <h3 class="text-sm font-semibold text-slate-100">Busca ativa</h3>
+            <ul class="text-sm text-slate-300 space-y-2">
+              <li>“Liste pacientes com CID I10 nesta unidade.”</li>
+              <li>“Quais pacientes femininos com mais de 50 anos têm diabetes?”</li>
+              <li>“Mostre até 20 pacientes com CIAP W78.”</li>
+            </ul>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-2">
+            <h3 class="text-sm font-semibold text-slate-100">Gestão e planejamento</h3>
+            <ul class="text-sm text-slate-300 space-y-2">
+              <li>“Quantos pacientes com hipertensão existem nesta unidade?”</li>
+              <li>“Quantos diabéticos acima de 50 anos temos?”</li>
+              <li>“Compare a quantidade de hipertensos entre as unidades.”</li>
+              <li>“Qual a carga de doenças crônicas na unidade?”</li>
+            </ul>
+          </div>
+        </div>
+        <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+          <h3 class="text-sm font-semibold text-slate-100">Dicas rápidas</h3>
+          <ul class="text-sm text-slate-300 mt-2 space-y-2">
+            <li>Sempre informe algum critério (idade, sexo, unidade, condição, CID ou ID).</li>
+            <li>Frases curtas funcionam melhor.</li>
+            <li>Evite perguntas abertas como “me mostre tudo”.</li>
+            <li>Use o filtro de Unidade no console para refinar os resultados.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="glass rounded-2xl p-6 space-y-5">
+        <div>
+          <h2 class="text-lg font-semibold">Auto-tools (atalhos da interface)</h2>
+          <p class="text-sm text-slate-400">Para abrir o menu, digite <span class="font-mono">/</span> no chat.</p>
+        </div>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-2">
+            <h3 class="text-sm font-semibold text-slate-100">/paciente-id</h3>
+            <p class="text-sm text-slate-300">
+              Use quando já tem o ID interno do paciente. A tela abre abas com dados básicos
+              (anonimizados), histórico de atendimentos (S/O/A/P) e condições de saúde.
+            </p>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-2">
+            <h3 class="text-sm font-semibold text-slate-100">/saude-360-c3</h3>
+            <p class="text-sm text-slate-300">
+              Ideal para acompanhar gestantes e o indicador C3 do Previne Brasil. Você pode
+              filtrar por período ou unidade e ver a lista de pacientes em déficit.
+            </p>
+          </div>
+        </div>
+        <p class="text-sm text-slate-400">
+          Auto-tools marcadas como “Em breve” aparecem desabilitadas no menu.
+        </p>
+      </section>
+
+      <section class="glass rounded-2xl p-6 space-y-4">
+        <h2 class="text-lg font-semibold">Quando usar chat ou auto-tools?</h2>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+            <h3 class="text-sm font-semibold text-slate-100">Use o chat quando:</h3>
+            <ul class="text-sm text-slate-300 mt-2 space-y-2">
+              <li>Você quer explorar um cenário ou tirar dúvidas.</li>
+              <li>Precisa de respostas em linguagem natural.</li>
+              <li>Quer ajustar filtros rapidamente.</li>
+            </ul>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+            <h3 class="text-sm font-semibold text-slate-100">Use auto-tools quando:</h3>
+            <ul class="text-sm text-slate-300 mt-2 space-y-2">
+              <li>Já sabe exatamente o que precisa.</li>
+              <li>Busca rapidez e padronização.</li>
+              <li>Quer repetir a mesma consulta várias vezes.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass rounded-2xl p-6 space-y-3">
+        <h2 class="text-lg font-semibold">Segurança e privacidade</h2>
+        <ul class="text-sm text-slate-300 space-y-2">
+          <li>O sistema nunca mostra nomes completos ou documentos.</li>
+          <li>Os dados aparecem anonimizados (iniciais, sexo, datas e condições).</li>
+          <li>O PEC MCP apenas lê o prontuário, não altera informações.</li>
+        </ul>
+      </section>
+
+      <section class="text-sm text-slate-400">
+        <p>Resumo: use o chat para perguntar, use auto-tools para agir rápido.</p>
+      </section>
+    </main>
+  </div>
+</body>
+
+</html>
