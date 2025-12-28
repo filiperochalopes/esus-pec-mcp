@@ -1,5 +1,5 @@
 """
-Tool para listar condições de saúde (CID/CIAP) de pacientes.
+Tool para listar condicoes de saude (CID/CIAP) registradas em pacientes.
 """
 
 from __future__ import annotations
@@ -64,7 +64,7 @@ def _to_initials(full_name: Optional[str]) -> str:
     return "".join(initials) if initials else "N/A"
 
 
-def listar_condicoes(
+def listar_condicoes_pacientes(
     ctx: Context,
     paciente_id: Optional[int] = None,
     name_starts_with: Optional[str] = None,
@@ -80,10 +80,11 @@ def listar_condicoes(
     limite: int = 50,
 ) -> List[ConditionResult]:
     """
-    Lista condições de saúde (CID/CIAP) aplicando filtros de paciente e condição.
+    Lista condicoes de saude (CID/CIAP) registradas em pacientes.
 
-    Exige pelo menos um critério para evitar varreduras amplas.
-    Aceita filtro opcional de unidade de saúde (atendimento ou vinculação por CNES).
+    Exige pelo menos um criterio para evitar varreduras amplas.
+    Aceita filtro opcional de unidade de saude (atendimento ou vinculacao por CNES).
+    Nao use para descobrir codigos; para isso, use obter_codigos_condicao_saude.
     """
 
     patient_clauses, patient_params = build_patient_filters(
@@ -145,4 +146,4 @@ def listar_condicoes(
     return results
 
 
-__all__ = ["listar_condicoes"]
+__all__ = ["listar_condicoes_pacientes"]

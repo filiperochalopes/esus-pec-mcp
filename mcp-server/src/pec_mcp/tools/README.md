@@ -27,9 +27,9 @@
   - Retorno traz apenas iniciais, nunca nome completo ou documentos.
   - Limite máximo de 200 linhas para evitar vazamento massivo.
 
-# Tool: listar_condicoes
+# Tool: listar_condicoes_pacientes
 
-- **Descrição**: lista condições de saúde (CID/CIAP) de pacientes usando filtros mínimos para evitar varreduras.
+- **Descricao**: lista condicoes de saude (CID/CIAP) registradas em pacientes usando filtros minimos para evitar varreduras. Nao use para descobrir codigos; use `obter_codigos_condicao_saude`.
 - **Consulta**: somente leitura.
 - **Tabelas/colunas relevantes**:
   - `tb_problema`:
@@ -67,7 +67,7 @@
 
 - **Descrição**: retorna apenas a contagem (`count`) de pacientes distintos aplicando filtros de paciente e/ou condição.
 - **Consulta**: somente leitura; não retorna payload de pacientes.
-- **Tabelas/colunas relevantes**: mesmas de `listar_condicoes`, mas usa `COUNT(DISTINCT c.co_seq_cidadao)`; só faz JOIN em `tb_problema`/`tb_cid10`/`tb_ciap` se filtros de condição forem informados; `unidade_saude_id` usa `tb_atend` (co_unidade_saude) ou `tb_cidadao_vinculacao_equipe` (nu_cnes) cruzados com `tb_unidade_saude`.
+- **Tabelas/colunas relevantes**: mesmas de `listar_condicoes_pacientes`, mas usa `COUNT(DISTINCT c.co_seq_cidadao)`; só faz JOIN em `tb_problema`/`tb_cid10`/`tb_ciap` se filtros de condição forem informados; `unidade_saude_id` usa `tb_atend` (co_unidade_saude) ou `tb_cidadao_vinculacao_equipe` (nu_cnes) cruzados com `tb_unidade_saude`.
 - **Filtros suportados** (ao menos um é obrigatório):
   - Paciente: `paciente_id`, `name_starts_with`, `sex`, `age_min`, `age_max`, `unidade_saude_id`
   - Condição: `cid_code`, `cid_codes` (lista), `cid_logic` (OR/AND), `ciap_code`, `condition_text` (ILIKE em descrições/observações)
@@ -105,3 +105,20 @@
 - **Guardrails**:
   - Restringe resultados a profissionais médicos (`225%`) ou enfermeiros (`2235%`) via `co_cbo_2002`.
   - Ordena do mais recente para o mais antigo pelo `dt_inicio`; quando `limite` não é informado, retorna todos os registros encontrados.
+
+# Tool: obter_codigos_condicao_saude
+
+- **Descricao**: retorna codigos CID-10/CIAP associados a uma condicao de saude para uso em filtros de outras tools.
+- **Uso recomendado**: perguntas do tipo "quais CID/CIAP de X?" e antes de filtrar por condicao.
+- **Consulta**: somente leitura.
+- **Tabelas/colunas relevantes**:
+  - `tb_cid10`: `nu_cid10`, `no_cid10`, `no_cid10_filtro`
+  - `tb_ciap`: `co_ciap`, `ds_ciap`, `ds_ciap_filtro`
+- **Filtros suportados**:
+  - `condicao` (obrigatorio)
+  - `limite` (1-200; default 50)
+- **Guardrails**:
+  - Valida `condicao` (nao vazia; max 100 chars).
+  - Limite maximo de 200 resultados por sistema.
+  - Quando nao ha match, retorna `fallback_condition_text` para uso em `condition_text`.
+- **Documentacao detalhada**: `mcp-server/src/pec_mcp/tools/docs/obter_codigos_condicao_saude/README.md`

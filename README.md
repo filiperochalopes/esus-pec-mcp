@@ -45,7 +45,7 @@ python -m pec_mcp.server
 ## Integração MCP standalone
 - Rode apenas o servidor acima (sem UI) para plugar em qualquer cliente/orquestrador compatível com o Model Context Protocol via HTTP (`streamable-http`).
 - Aponte seu cliente para `http://<MCP_HTTP_HOST>:<MCP_HTTP_PORT>` e use o server id `pec-mcp`; nenhuma integração proprietária é necessária.
-- As tools expostas no modo standalone são as mesmas do servidor: `capturar_paciente`, `listar_condicoes`, `contar_pacientes`, `listar_unidades_saude` e `listar_ultimos_atendimentos_soap`.
+- As tools expostas no modo standalone são as mesmas do servidor: `capturar_paciente`, `obter_codigos_condicao_saude`, `listar_condicoes_pacientes`, `contar_pacientes`, `listar_unidades_saude` e `listar_ultimos_atendimentos_soap`.
 - Caso precise isolar o acesso, mantenha o host em `127.0.0.1` e exponha só via túnel/SSH ou reverse proxy com BasicAuth.
 
 ## Rodando a UI FastAPI/Jinja2
@@ -81,10 +81,15 @@ As tools expostas pelo servidor MCP (`pec_mcp` em `mcp-server/src/pec_mcp`) segu
 - **Retorno**: `name` (iniciais do nome completo), `birth_date` (YYYY-MM-DD), `sex` (coluna `no_sexo`), `gender` (mesmo valor de `sex` até haver coluna dedicada) e identificadores internos como `paciente_id`/`co_seq_cidadao`.
 - **Guardrails**: exige ao menos um filtro de paciente, limita resultados a 200 linhas, nunca expõe nomes completos ou documentos, e aplica os filtros de unidade apenas quando informado (`co_seq_unidade_saude` ou CNES vinculado).
 
-### listar_condicoes
+### listar_condicoes_pacientes
 - **Parâmetros principais**: mesmo conjunto paciente (id, prefixo de nome, sexo, faixa etária, unidade) e filtros de condição (`cid_code`, lista `cid_codes` combinadas com `cid_logic` (default OR), `ciap_code`, `condition_text`, `limite` 1–200).
 - **Retorno**: lista de `ConditionResult` com `paciente_id`, `paciente_initials`, `birth_date`, `sex`, `condition_id`, `cid_code`/`cid_description`, `ciap_code`/`ciap_description`, `dt_inicio_condicao`, `dt_fim_condicao`, `situacao_id`, `observacao`. Os valores textuais (CID/CIAP/observação) são filtrados com `ILIKE`.
-- **Guardrails**: exige pelo menos um filtro antes de executar a consulta; `cid_logic` opera apenas como OR; o limite máximo é 200 registros e as iniciais substituem nomes completos para manter anonimização.
+- **Guardrails**: exige pelo menos um filtro antes de executar a consulta; `cid_logic` opera apenas como OR; o limite máximo é 200 registros e as iniciais substituem nomes completos para manter anonimização. Use `obter_codigos_condicao_saude` para descobrir CID/CIAP de uma condição.
+
+### obter_codigos_condicao_saude
+- **Parâmetros principais**: `condicao` (obrigatório), `limite` (default 50; máximo 200).
+- **Retorno**: `cid_codes` e `ciap_codes` (listas de códigos), além de `cid`/`ciap` com `code` e `description`.
+- **Guardrails**: usa presets para condições comuns; quando não houver match no banco, retorna `fallback_condition_text` para uso em `condition_text` nas demais tools.
 
 ### contar_pacientes
 - **Parâmetros principais**: qualquer filtro de paciente (`paciente_id`, `name_starts_with`, `sex`, `age_min`, `age_max`, `unidade_saude_id`) e/ou condição (`cid_code`, `cid_codes` com `cid_logic` OR/AND, `ciap_code`, `condition_text` com até 100 caracteres).

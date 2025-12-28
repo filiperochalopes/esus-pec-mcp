@@ -2,7 +2,7 @@
 
 ## Overview
 - Servidor MCP em Python para fornecer dados clínicos do PEC (somente leitura) a agentes LLM.
-- Tools atuais: captura anonimizada de paciente, listagem de condições (CID/CIAP) e contagem agregada de pacientes.
+- Tools atuais: captura anonimizada de paciente, mapeamento de codigos CID/CIAP por condicao, listagem de condicoes registradas e contagem agregada de pacientes.
 - Conexão única ao PostgreSQL, reutilizada pelas tools para reduzir latência.
 
 ## Checklist antes de criar ou ajustar tools
@@ -29,8 +29,21 @@
   - "Recupere o paciente 123 com iniciais, data de nascimento e sexo."
   - "Liste até 5 pacientes cujo nome começa com A, sexo masculino e idade mínima de 40 anos."
 
-### listar_condicoes
-- Descrição: lista condições de saúde (CID/CIAP) de pacientes, retornando apenas iniciais e dados clínicos mínimos.
+### obter_codigos_condicao_saude
+- Descricao: retorna codigos CID-10/CIAP associados a uma condicao de saude para uso em filtros.
+- Parâmetros:
+  - `condicao` (str, obrigatorio)
+  - `limite` (int, default 50, max 200)
+- Saida (`HealthConditionCaptureResult`):
+  - `cid_codes` / `ciap_codes`: listas de codigos para filtros.
+  - `cid` / `ciap`: lista detalhada com `code` e `description`.
+  - `fallback_condition_text`: quando nao ha match no banco.
+- Uso recomendado:
+  - "Quais sao os CID de diabetes?"
+  - "Quais CIAP de hipertensao?"
+
+### listar_condicoes_pacientes
+- Descricao: lista condicoes de saude (CID/CIAP) registradas em pacientes, retornando apenas iniciais e dados clinicos minimos. Nao use para descobrir codigos; use `obter_codigos_condicao_saude`.
 - Parâmetros (informe pelo menos um critério):
   - `paciente_id` (int, co_seq_cidadao)
   - `name_starts_with` (str, prefixo do nome, ex.: "A")

@@ -42,6 +42,21 @@ class CountResult(TypedDict):
     count: int
 
 
+class HealthConditionCode(TypedDict):
+    code: str
+    description: Optional[str]
+
+
+class HealthConditionCaptureResult(TypedDict):
+    condition: str
+    source: str
+    cid_codes: list[str]
+    ciap_codes: list[str]
+    cid: list["HealthConditionCode"]
+    ciap: list["HealthConditionCode"]
+    fallback_condition_text: Optional[str]
+
+
 class HealthUnitResult(TypedDict):
     unidade_id: int
     cnes: Optional[str]
@@ -82,6 +97,8 @@ __all__ = [
     "PatientCaptureResult",
     "ConditionResult",
     "CountResult",
+    "HealthConditionCode",
+    "HealthConditionCaptureResult",
     "HealthUnitResult",
     "AtendimentoSOAPResult",
     "SOAPCondition",

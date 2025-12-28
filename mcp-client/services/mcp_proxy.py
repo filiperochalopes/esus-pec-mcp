@@ -17,7 +17,8 @@ from fastapi.encoders import jsonable_encoder
 from config import apply_db_config, load_db_config
 from pec_mcp.db import get_connection
 from pec_mcp.tools.paciente import capturar_paciente
-from pec_mcp.tools.condicoes import listar_condicoes
+from pec_mcp.tools.condicoes import listar_condicoes_pacientes
+from pec_mcp.tools.obter_codigos_condicao_saude import obter_codigos_condicao_saude
 from pec_mcp.tools.contar_pacientes import contar_pacientes
 from pec_mcp.tools.unidades import listar_unidades_saude
 from pec_mcp.tools.atendimentos import listar_ultimos_atendimentos_soap
@@ -35,7 +36,7 @@ class _Ctx:
 TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
     "capturar_paciente": {
         "func": capturar_paciente,
-        "description": "Returns de-identified patient records (initials, birth date, sex, gender) by id or filters.",
+        "description": "Retorna pacientes anonimizados por id ou filtros; exige ao menos um criterio de paciente.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -74,9 +75,34 @@ TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
             "required": [],
         },
     },
+    "obter_codigos_condicao_saude": {
+        "func": obter_codigos_condicao_saude,
+        "description": (
+            "Mapeia uma condicao de saude para codigos CID-10/CIAP "
+            "(presets + busca por nome). Use para perguntas do tipo "
+            "\"quais CID/CIAP de X\" e antes de filtrar por condicao."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "condicao": {
+                    "type": "string",
+                    "description": "Nome da condicao para mapear codigos (ex.: diabetes, gravidez).",
+                },
+                "limite": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 200,
+                    "default": 50,
+                    "description": "Quantidade maxima de codigos por sistema (1-200).",
+                },
+            },
+            "required": ["condicao"],
+        },
+    },
     "listar_ultimos_atendimentos_soap": {
         "func": listar_ultimos_atendimentos_soap,
-        "description": "Lista os últimos atendimentos SOAP (S/O/A/P) de um paciente por id, retornando dados do profissional e CBO.",
+        "description": "Lista os ultimos atendimentos SOAP (S/O/A/P) de um paciente por id, com profissional e CBO.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -94,9 +120,12 @@ TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
             "required": ["paciente_id"],
         },
     },
-    "listar_condicoes": {
-        "func": listar_condicoes,
-        "description": "Lista condições de saúde (CID/CIAP) com iniciais e dados mínimos do paciente; exige pelo menos um filtro.",
+    "listar_condicoes_pacientes": {
+        "func": listar_condicoes_pacientes,
+        "description": (
+            "Somente para listar condicoes registradas em pacientes (CID/CIAP + ultima evolucao) "
+            "usando filtros. Para descobrir codigos de uma condicao, use obter_codigos_condicao_saude."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {
@@ -136,7 +165,10 @@ TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
     },
     "contar_pacientes": {
         "func": contar_pacientes,
-        "description": "Retorna apenas {count} de pacientes distintos aplicando filtros de paciente e/ou condição; exige ao menos um critério.",
+        "description": (
+            "Retorna apenas {count} de pacientes distintos aplicando filtros; "
+            "exige ao menos um criterio e nao retorna lista de pacientes."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {
@@ -169,7 +201,7 @@ TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
     },
     "listar_unidades_saude": {
         "func": listar_unidades_saude,
-        "description": "Lista todas as unidades de saúde (co_seq_unidade_saude, CNES e nome) para uso em filtros.",
+        "description": "Lista todas as unidades de saude (co_seq_unidade_saude, CNES e nome) para uso em filtros.",
         "input_schema": {"type": "object", "properties": {}},
     },
 }

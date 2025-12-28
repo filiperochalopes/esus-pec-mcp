@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from pec_mcp.db import query_all
-from pec_mcp.tools.condicoes import listar_condicoes
+from pec_mcp.tools.condicoes import listar_condicoes_pacientes
 
 
 def _find_paciente_com_condicao(conn):
@@ -26,7 +26,7 @@ def test_listar_condicoes_por_paciente(ctx):
     if not paciente_id:
         pytest.skip("Base sem condições registradas para teste")
 
-    results = listar_condicoes(ctx, paciente_id=paciente_id, limite=5)
+    results = listar_condicoes_pacientes(ctx, paciente_id=paciente_id, limite=5)
     assert isinstance(results, list)
     assert results, "Nenhuma condição retornada"
 
@@ -53,4 +53,4 @@ def test_listar_condicoes_por_paciente(ctx):
 
 def test_listar_condicoes_sem_filtros(ctx):
     with pytest.raises(ValueError):
-        listar_condicoes(ctx)
+        listar_condicoes_pacientes(ctx)

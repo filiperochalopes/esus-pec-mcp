@@ -268,7 +268,7 @@ def _load_paciente_condicoes(paciente_id: int, limite: int = 200) -> List[Dict[s
     safe_limit = max(1, min(int(limite), 200))
     try:
         payload = call_tool(
-            "listar_condicoes",
+            "listar_condicoes_pacientes",
             {"paciente_id": int(paciente_id), "limite": safe_limit},
         )
     except ValueError as exc:
