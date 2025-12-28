@@ -14,17 +14,37 @@ except ImportError:
     from pydantic import create_model
 
 # Providers
-from langchain_anthropic import ChatAnthropic
-from langchain_openai import ChatOpenAI
-# For Ollama we can use ChatOllama
-from langchain_ollama import ChatOllama
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_mistralai import ChatMistralAI
-# MLX is conditional
+try:
+    from langchain_anthropic import ChatAnthropic
+except ImportError:
+    ChatAnthropic = None
+
+try:
+    from langchain_openai import ChatOpenAI
+except ImportError:
+    ChatOpenAI = None
+
+try:
+    from langchain_ollama import ChatOllama
+except ImportError:
+    ChatOllama = None
+
+try:
+    from langchain_google_genai import ChatGoogleGenerativeAI
+except ImportError:
+    ChatGoogleGenerativeAI = None
+
+try:
+    from langchain_mistralai import ChatMistralAI
+except ImportError:
+    ChatMistralAI = None
+
 try:
     from langchain_community.chat_models import ChatMLX
+    from langchain_community.llms import MLXPipeline
 except ImportError:
     ChatMLX = None
+    MLXPipeline = None
 
 from .mcp_proxy import call_tool, list_tools, TOOL_REGISTRY
 
@@ -154,22 +174,89 @@ def run_llm_chat(
     # 1. Initialize LLM
     llm = None
     if provider == "anthropic":
-        llm = ChatAnthropic(model=model_name, api_key=api_key, temperature=0, max_tokens=8000)
+        if not ChatAnthropic:
+            raise ImportError("Provedor Anthropic não disponível. Instale 'langchain-anthropic'.")
+        llm = ChatAnthropic(model=model_name, api_key=api_key, temperature=0, max_tokens=4096)
     elif provider == "openai":
+        if not ChatOpenAI:
+            raise ImportError("Provedor OpenAI não disponível. Instale 'langchain-openai'.")
         llm = ChatOpenAI(model=model_name, api_key=api_key, temperature=0)
     elif provider == "ollama":
+        if not ChatOllama:
+            raise ImportError("Provedor Ollama não disponível. Instale 'langchain-ollama'.")
         # Ensure base_url is set if provided, else defaults to localhost:11434
         llm = ChatOllama(model=model_name, temperature=0, base_url=api_base or "http://localhost:11434")
     elif provider == "gemini":
+        if not ChatGoogleGenerativeAI:
+            raise ImportError("Provedor Gemini não disponível. Instale 'langchain-google-genai'.")
         llm = ChatGoogleGenerativeAI(model=model_name, google_api_key=api_key, temperature=0)
     elif provider == "mistral":
+        if not ChatMistralAI:
+            raise ImportError("Provedor Mistral não disponível. Instale 'langchain-mistralai'.")
         llm = ChatMistralAI(model=model_name, mistral_api_key=api_key, temperature=0)
     elif provider == "mlx":
-        if not ChatMLX:
-            raise ImportError("ChatMLX is not available. Please install 'mlx-lm'.")
-        # ChatMLX uses a local path or huggingface repo id. `model_name` acts as the repo id.
-        # It typically doesn't need an API key.
-        llm = ChatMLX(model=model_name)
+        if not ChatMLX or not MLXPipeline:
+            raise ImportError("Provedor MLX não disponível. Instale 'mlx-lm' e 'langchain-community'.")
+        
+        # --- PATCH: Fix for generate_step unexpected keyword argument 'formatter' ---
+        # langchain_community passes formatter -> mlx_lm.generate.stream_generate -> generate_step.
+        # Newer mlx_lm removed formatter from generate_step signature.
+        try:
+            import importlib
+
+            def _patch_generate_step(module):
+                if not hasattr(module, "generate_step"):
+                    return
+                _original_generate_step = module.generate_step
+
+                # Avoid double-patching / recursion
+                if getattr(_original_generate_step, "__name__", "") == "_patched_generate_step":
+                    return
+
+                try:
+                    import inspect
+                    sig = inspect.signature(_original_generate_step)
+                    params = sig.parameters.values()
+                    accepts_formatter = (
+                        "formatter" in sig.parameters
+                        or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params)
+                    )
+                    if accepts_formatter:
+                        return
+                except Exception:
+                    # If we cannot introspect, fall back to patching defensively.
+                    pass
+
+                def _patched_generate_step(*args, **kwargs):
+                    if "formatter" in kwargs:
+                        kwargs.pop("formatter")
+                    return _original_generate_step(*args, **kwargs)
+
+                module.generate_step = _patched_generate_step
+
+            # Newer mlx_lm
+            try:
+                mlx_generate = importlib.import_module("mlx_lm.generate")
+                _patch_generate_step(mlx_generate)
+            except Exception:
+                pass
+
+            # Older mlx_lm (if generate_step lived in utils)
+            try:
+                mlx_utils = importlib.import_module("mlx_lm.utils")
+                _patch_generate_step(mlx_utils)
+            except Exception:
+                pass
+        except Exception:
+            pass
+        # --- END PATCH ---
+
+        # ChatMLX requires a pipeline instance
+        pipeline = MLXPipeline.from_model_id(
+            model_id=model_name,
+            pipeline_kwargs={"max_tokens": 2048, "temp": 0.0}
+        )
+        llm = ChatMLX(llm=pipeline)
     else:
         raise ValueError(f"Unknown provider: {provider}")
 

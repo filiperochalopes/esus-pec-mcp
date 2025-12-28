@@ -5,7 +5,9 @@ Gestor: Obtenha dados de gestão e epidemiologia na distancia de uma pergunta e 
 
 ## Gostaria de saber sua opnião
 
-O que você queria que essa aplicação tivesse? [Faça suas perguntas aqui](https://wa.me/5571992518950&text=Ol%C3%A1%2C%20%C3%A9%20sobre%20o%20projeto%20PEC%20MCP)
+O que você queria que essa aplicação tivesse? [Faça suas perguntas aqui](https://wa.me/5571992518950?text=Ol%C3%A1%2C%20%C3%A9%20sobre%20o%20projeto%20PEC%20MCP)
+
+Gostaria de testar a ferramenta? [Entre em contato](https://wa.me/5571992518950?text=Sou%20respons%C3%A1vel%20pelo%20PEC%20%28dados%29%20de%20meu%20munic%C3%ADpio%20e%20quero%20testar%20o%20MCP%20para%20dar%20acesso%20aos%20dados%20otimizados%20dos%20pacientes%20aos%20profissionais%20da%20assist%C3%AAncia%20e%20relat%C3%B3rios%20de%20epidemiologia%20e%20do%20modelo%20de%20financiamento%20360%20do%20Minist%C3%A9rio%20da%20Sa%C3%BAde%20aos%20gestores)
 
 ## Requisitos
 - Python 3.11+
@@ -130,5 +132,3 @@ A interface FastAPI + Jinja2 (rodando em `mcp-client/`) reconhece comandos rápi
   - `tp_`: tipos/categorias (FK para domínio)
   - `st_`: status/flags (inteiros)
   - `qt_`: quantidades
-
-Quem quiser testar a ferramenta (entre em contato)[https://wa.me/5571992518950]

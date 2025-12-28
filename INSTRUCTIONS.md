@@ -2,13 +2,31 @@
 
 Esta aplicação suporta múltiplos provedores de Modelos de Linguagem (LLM) através do LangChain. Você pode configurar o provedor desejado através da interface web (ícone de engrenagem) ou definindo variáveis de ambiente.
 
+## Configuração de Preferências (Env Vars)
+
+Se você deseja que a aplicação inicie sempre com um provedor ou modelo específico, adicione estas chaves ao seu arquivo `.env`:
+
+```bash
+# Provedor padrão: anthropic, openai, ollama, gemini, mistral, mlx
+LLM_PROVIDER=mlx
+
+# Modelo padrão
+LLM_MODEL=mlx-community/Qwen2.5-7B-Instruct-4bit
+
+# API Key (se necessário para o provedor)
+LLM_API_KEY=sua_chave_aqui
+
+# Base URL (opcional, útil para Ollama ou Local OpenAI)
+LLM_API_BASE=http://localhost:11434
+```
+
 ## Provedores Suportados
 
 ### 1. Anthropic (Claude)
 - **Recomendado para:** Raciocínio complexo, tool calling preciso.
 - **Configuração:**
   - **API Key:** Necessária. Obtenha em [console.anthropic.com](https://console.anthropic.com/).
-  - **Modelo:** `claude-3-5-sonnet-20241022` (padrão), `claude-3-opus-20240229`, etc.
+  - **Modelo:** [`claude-3-5-sonnet-20241022`](https://platform.claude.com/docs/en/about-claude/model-deprecations) (padrão), `claude-3-opus-20240229`, etc.
   - **Env Var:** `ANTHROPIC_API_KEY`
 
 ### 2. OpenAI (GPT)
@@ -47,7 +65,7 @@ Esta aplicação suporta múltiplos provedores de Modelos de Linguagem (LLM) atr
   - MacOS com Apple Silicon.
   - Python packages: `mlx-lm`, `langchain-community`. (Já incluídos no `requirements.txt` condicionalmente ou instale manualmente).
 - **Configuração:**
-  - **Modelo:** ID do repositório Hugging Face (ex.: `mlx-community/Llama-3.2-3B-Instruct-4bit`).
+  - **Modelo:** ID do repositório Hugging Face (ex.: `mlx-community/Qwen3-30B-A3B-4bit`).
   - **API Key:** Não necessária.
   - **Nota:** A primeira execução fará o download do modelo, o que pode levar tempo.
 
