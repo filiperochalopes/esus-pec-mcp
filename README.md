@@ -130,3 +130,5 @@ A interface FastAPI + Jinja2 (rodando em `mcp-client/`) reconhece comandos rápi
   - `tp_`: tipos/categorias (FK para domínio)
   - `st_`: status/flags (inteiros)
   - `qt_`: quantidades
+
+Quem quiser testar a ferramenta (entre em contato)[https://wa.me/5571992518950]

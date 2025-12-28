@@ -14,3 +14,8 @@ langchain-community
 langchain-anthropic
 langchain-openai
 langchain-ollama
+langchain-google-genai
+langchain-mistralai
+# MLX requires specific hardware (Apple Silicon), but we list it as optional or just included.
+# mlx-lm is needed for ChatMLX
+mlx-lm; sys_platform == 'darwin' and platform_machine == 'arm64'
