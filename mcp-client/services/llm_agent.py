@@ -4,7 +4,7 @@ import json
 import time
 import os
 from threading import Lock
-from typing import Any, Dict, List, Optional, Tuple, Literal
+from typing import Any, Dict, List, Optional, Tuple, Literal, Callable
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage, BaseMessage, SystemMessage
 from langchain_core.tools import StructuredTool
@@ -162,14 +162,22 @@ def run_llm_chat(
     tool_alias: str = "server",
     conversation_id: Optional[str] = None,
     # Additional config for Ollama (base_url) could be added here
-    api_base: Optional[str] = None
+    api_base: Optional[str] = None,
+    event_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
+    collect_events: bool = True,
 ) -> Tuple[str, List[Dict[str, Any]]]:
     
     conv_id = conversation_id or _random_id()
     events: List[Dict[str, Any]] = []
 
     def emit(event: Dict[str, Any]):
-        events.append(event)
+        if event_callback:
+            try:
+                event_callback(event)
+            except Exception:
+                pass
+        if collect_events:
+            events.append(event)
 
     # 1. Initialize LLM
     llm = None

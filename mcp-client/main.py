@@ -8,13 +8,15 @@ import json
 import os
 from datetime import date, timedelta
 from pathlib import Path
+from queue import Queue
+from threading import Thread
 from typing import Any, Dict, List, Optional
 import html
 import re
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
@@ -941,6 +943,47 @@ async def api_chat_run(payload: ChatPayload):
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return {"conversation_id": conversation_id, "events": events}
+
+
+@app.post("/api/chat/stream")
+async def api_chat_stream(payload: ChatPayload):
+    queue: Queue = Queue()
+    done = object()
+
+    def push_event(event: Dict[str, Any]) -> None:
+        queue.put({"event": event})
+
+    def worker() -> None:
+        try:
+            conversation_id, _ = run_llm_chat(
+                payload.provider,
+                payload.model,
+                payload.api_key,
+                payload.prompt,
+                payload.system_prompt,
+                payload.max_turns,
+                payload.tool_alias,
+                payload.conversation_id,
+                payload.api_base,
+                event_callback=push_event,
+                collect_events=False,
+            )
+            queue.put({"conversation_id": conversation_id})
+        except Exception as exc:
+            queue.put({"error": str(exc)})
+        finally:
+            queue.put(done)
+
+    Thread(target=worker, daemon=True).start()
+
+    def iter_lines():
+        while True:
+            item = queue.get()
+            if item is done:
+                break
+            yield (json.dumps(item, ensure_ascii=False) + "\n").encode("utf-8")
+
+    return StreamingResponse(iter_lines(), media_type="application/x-ndjson")
 
 
 @app.post("/api/chat/reset")

@@ -590,7 +590,7 @@ const createMcpConsole = () => ({
     this.statusMessage = 'Chamando LLM...'
 
     try {
-      const res = await fetch('/api/chat/run', {
+      const res = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -605,17 +605,59 @@ const createMcpConsole = () => ({
           conversation_id: this.conversationId,
         }),
       })
-      const data = await res.json()
       if (!res.ok) {
-        throw new Error(data?.detail || 'Falha ao executar o chat')
+        let detail = 'Falha ao executar o chat'
+        try {
+          const data = await res.json()
+          detail = data?.detail || detail
+        } catch (err) {
+          // ignore parsing errors
+        }
+        throw new Error(detail)
       }
-      if (data.conversation_id) {
-        this.conversationId = data.conversation_id
+      if (!res.body) {
+        throw new Error('Streaming indisponível no navegador.')
       }
-      if (Array.isArray(data.events)) {
-        this.chatEvents = [...this.chatEvents, ...data.events]
-        this.$nextTick(() => this.scrollToBottom())
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder('utf-8')
+      let buffer = ''
+
+      const handleLine = (line) => {
+        const trimmed = line.trim()
+        if (!trimmed) return
+        let payload
+        try {
+          payload = JSON.parse(trimmed)
+        } catch (err) {
+          return
+        }
+        if (payload?.event) {
+          this.chatEvents = [...this.chatEvents, payload.event]
+          this.$nextTick(() => this.scrollToBottom())
+          return
+        }
+        if (payload?.conversation_id) {
+          this.conversationId = payload.conversation_id
+          return
+        }
+        if (payload?.error) {
+          throw new Error(payload.error)
+        }
       }
+
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        lines.forEach(handleLine)
+      }
+
+      if (buffer.trim()) {
+        handleLine(buffer)
+      }
+
       this.status = 'connected'
       this.statusMessage = 'Resposta recebida'
       this.chatPrompt = ''
