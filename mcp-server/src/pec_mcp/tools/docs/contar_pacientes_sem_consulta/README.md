@@ -1,0 +1,26 @@
+# Tool: contar_pacientes_sem_consulta
+
+- **Descrição**: conta pacientes sem consulta recente (médicos/enfermeiros) por perfil clínico (`hipertensao`, `diabetes`, `gestante`).
+- **Consulta**: somente leitura.
+- **Parâmetros**:
+  - `tipo` (obrigatório): `hipertensao`, `diabetes` ou `gestante`.
+  - `dias_sem_consulta` (opcional): número de dias desde a última consulta; default 180 (hipertensão/diabetes) ou 60 (gestantes).
+  - `unidade_saude_id` (opcional): limita pacientes vinculados à unidade e considera consultas apenas nessa unidade.
+- **Tabelas/colunas relevantes**:
+  - `tb_atend_prof`: `co_atend`, `co_lotacao` (liga atendimento profissional ao atendimento e à lotação).
+  - `tb_atend`: `co_seq_atend`, `co_prontuario`, `co_unidade_saude`, `dt_inicio` (data da consulta).
+  - `tb_lotacao`: `co_ator_papel`, `co_cbo`.
+  - `tb_cbo`: `co_cbo`, `co_cbo_2002` (filtro por CBO médico/enfermeiro: `225%` / `2235%`).
+  - `tb_prontuario`: `co_seq_prontuario`, `co_cidadao`.
+  - `tb_cidadao`: `co_seq_cidadao` (identificador interno do paciente).
+  - `tb_problema`: `co_prontuario`, `co_cid10`, `co_ciap` (condições crônicas).
+  - `tb_cid10`: `nu_cid10` (CID-10 de hipertensão/diabetes).
+  - `tb_ciap`: `co_ciap` (CIAP de hipertensão/diabetes).
+  - `tb_pre_natal`: `co_prontuario`, `dt_desfecho` (gestação ativa quando `dt_desfecho` é NULL).
+  - `tb_cidadao_vinculacao_equipe` + `tb_unidade_saude`: vinculação por CNES usada quando `unidade_saude_id` é informado.
+- **Filtros/guardrails**:
+  - Retorna somente contagem agregada (`count`).
+  - CBO restrito a médicos (`225%`) e enfermeiros (`2235%`).
+  - `unidade_saude_id`, quando fornecido, deve ser inteiro positivo.
+  - Não retorna nomes ou identificadores sensíveis.
+  - Gestantes usam o mesmo recorte de idade gestacional do `listar_gestantes` (2–42 semanas).
