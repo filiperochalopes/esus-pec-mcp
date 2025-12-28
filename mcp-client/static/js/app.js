@@ -11,13 +11,13 @@ const readInitialConfig = () => {
   }
 }
 
-const readClaudeDefaults = () => {
-  const el = document.getElementById('claude-defaults')
+const readChatDefaults = () => {
+  const el = document.getElementById('chat-defaults')
   if (!el) return {}
   try {
     return JSON.parse(el.textContent || '{}')
   } catch (err) {
-    console.warn('Não foi possível ler defaults do Claude', err)
+    console.warn('Não foi possível ler defaults do Chat', err)
     return {}
   }
 }
@@ -199,19 +199,25 @@ const createMcpConsole = () => ({
         return ''
     }
   },
-  claudeApiKey: readClaudeDefaults().api_key || '',
-  claudeModel: readClaudeDefaults().model || 'claude-3-5-sonnet-20241022',
-  claudePrompt: '',
-  claudeSystem:
+
+  // State Variables
+  chatProvider: readChatDefaults().provider || 'anthropic',
+  chatApiKey: readChatDefaults().api_key || '',
+  chatModel: readChatDefaults().model || 'claude-3-5-sonnet-20241022',
+  chatApiBase: readChatDefaults().api_base || '',
+  chatPrompt: '',
+  chatSystem:
     'Você é um agente clínico que usa tools MCP para recuperar dados. Sempre que responder com pacientes (lista ou item), acrescente o identificador real no formato @<paciente_id> usando o co_seq_cidadao devolvido pelas tools. Em tabelas Markdown, inclua o @<paciente_id> em uma coluna ou célula própria para não quebrar a formatação. Não invente ids.',
-  claudeEvents: [],
+  chatEvents: [],
   conversationId: uid(),
-  claudeBusy: false,
-  claudeError: null,
+  chatBusy: false,
+  chatError: null,
+  
   unidades: [],
   unidadeSelecionada: 'all',
   unidadesLoading: false,
   unidadesErro: null,
+  
   autoToolMenuOpen: false,
   autoToolInputOpen: false,
   autoToolArgument: '',
@@ -229,6 +235,7 @@ const createMcpConsole = () => ({
       active: true,
     },
   ],
+  
   patientModalOpen: false,
   patientLoading: false,
   patientData: null,
@@ -247,6 +254,7 @@ const createMcpConsole = () => ({
   patientConditionsOpen: false,
   patientConditionsError: null,
   summaryPreparing: false,
+  
   saude360ModalOpen: false,
   saude360Loading: false,
   saude360Error: null,
@@ -261,6 +269,7 @@ const createMcpConsole = () => ({
   saude360DetailData: null,
   saude360DetailComponent: null,
   saude360DetailUnit: null,
+  
   toolsModalOpen: false,
   toolsInfo: [
     {
@@ -447,15 +456,15 @@ const createMcpConsole = () => ({
   async newConversation() {
     const previousId = this.conversationId
     this.conversationId = uid()
-    this.claudeEvents = []
-    this.claudePrompt = ''
-    this.claudeError = null
+    this.chatEvents = []
+    this.chatPrompt = ''
+    this.chatError = null
     this.status = 'connected'
     this.statusMessage = 'Nova conversa iniciada'
 
     if (!previousId) return
     try {
-      await fetch('/api/claude/reset', {
+      await fetch('/api/chat/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ conversation_id: previousId }),
@@ -541,23 +550,25 @@ const createMcpConsole = () => ({
     }
   },
 
-  async runClaude() {
-    if (this.claudeBusy) return
-    this.claudeError = null
-    if (!this.claudeApiKey) {
-      this.claudeError = 'Informe sua Anthropic API Key.'
+  async runChat() {
+    if (this.chatBusy) return
+    this.chatError = null
+    
+    // Check key only if provider is not ollama (which might not need it)
+    if (this.chatProvider !== 'ollama' && !this.chatApiKey) {
+      this.chatError = 'Informe sua API Key.'
       return
     }
-    if (!this.claudePrompt.trim()) {
-      this.claudeError = 'Digite um prompt.'
+    if (!this.chatPrompt.trim()) {
+      this.chatError = 'Digite um prompt.'
       return
     }
 
-    const promptBase = this.claudePrompt.trim()
+    const promptBase = this.chatPrompt.trim()
     let prompt = promptBase
 
     if (promptBase === '/saude-360-c3') {
-      this.claudePrompt = ''
+      this.chatPrompt = ''
       this.autoToolMenuOpen = false
       this.loadSaude360C3()
       return
@@ -574,19 +585,21 @@ const createMcpConsole = () => ({
       prompt = `${promptBase}\n\n[Filtro de unidade selecionado: ${unitLabel}. Ao chamar tools, use unidade_saude_id=${unitId}.]`
     }
 
-    this.claudeBusy = true
+    this.chatBusy = true
     this.status = 'connecting'
-    this.statusMessage = 'Chamando Claude...'
+    this.statusMessage = 'Chamando LLM...'
 
     try {
-      const res = await fetch('/api/claude/chat', {
+      const res = await fetch('/api/chat/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          api_key: this.claudeApiKey,
-          model: this.claudeModel,
+          provider: this.chatProvider,
+          api_key: this.chatApiKey,
+          api_base: this.chatApiBase,
+          model: this.chatModel,
           prompt,
-          system_prompt: this.claudeSystem,
+          system_prompt: this.chatSystem,
           max_turns: 4,
           tool_alias: 'pec',
           conversation_id: this.conversationId,
@@ -600,18 +613,18 @@ const createMcpConsole = () => ({
         this.conversationId = data.conversation_id
       }
       if (Array.isArray(data.events)) {
-        this.claudeEvents = [...this.claudeEvents, ...data.events]
+        this.chatEvents = [...this.chatEvents, ...data.events]
         this.$nextTick(() => this.scrollToBottom())
       }
       this.status = 'connected'
       this.statusMessage = 'Resposta recebida'
-      this.claudePrompt = ''
+      this.chatPrompt = ''
     } catch (err) {
-      this.claudeError = err.message
+      this.chatError = err.message
       this.status = 'error'
       this.statusMessage = 'Erro na execução'
     } finally {
-      this.claudeBusy = false
+      this.chatBusy = false
     }
   },
 
@@ -632,6 +645,7 @@ const createMcpConsole = () => ({
     this.patientConditionsLoading = false
     this.patientConditionsLoaded = false
     this.patientConditionsOpen = false
+    this.patientConditionsError = null
     this.summaryPreparing = false
   },
 
@@ -787,10 +801,10 @@ const createMcpConsole = () => ({
     promptLines.push('Condições registradas:')
     promptLines.push(JSON.stringify(condicoesCompact, null, 2))
 
-    this.claudePrompt = promptLines.join('\n')
+    this.chatPrompt = promptLines.join('\n')
 
-    if (this.claudeApiKey) {
-      this.$nextTick(() => this.runClaude())
+    if (this.chatApiKey || this.chatProvider === 'ollama') {
+      this.$nextTick(() => this.runChat())
     }
   },
 

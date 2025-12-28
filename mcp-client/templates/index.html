@@ -11,7 +11,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/css/styles.css" />
   <script id="initial-config" type="application/json">{{ initial_config_json | safe }}</script>
-  <script id="claude-defaults" type="application/json">{{ claude_defaults | tojson | safe }}</script>
+  <script id="chat-defaults" type="application/json">{{ chat_defaults | tojson | safe }}</script>
   <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" defer></script>
 </head>
@@ -57,11 +57,11 @@
       <section class="glass rounded-2xl p-6 mt-8 space-y-6">
         <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-lg font-semibold">Chat Claude + MCP</h2>
+            <h2 class="text-lg font-semibold">Chat MCP</h2>
             <p class="text-sm text-slate-300">Mensagens e tool calling aparecem na linha do tempo.</p>
           </div>
           <div class="flex items-center gap-3">
-            <button type="button" class="btn-ghost px-4" @click="newConversation()" :disabled="claudeBusy">
+            <button type="button" class="btn-ghost px-4" @click="newConversation()" :disabled="chatBusy">
               Nova Conversa
             </button>
           </div>
@@ -69,10 +69,10 @@
 
         <div class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 max-h-[480px] overflow-y-auto space-y-4"
           x-ref="timeline" @click="handleTimelineClick($event)" @keydown="handleTimelineKeydown($event)">
-          <template x-if="!claudeEvents.length">
+          <template x-if="!chatEvents.length">
             <p class="text-sm text-slate-400">Envie uma mensagem para iniciar o chat.</p>
           </template>
-          <template x-for="event in claudeEvents" :key="event.id">
+          <template x-for="event in chatEvents" :key="event.id">
             <article class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-3">
               <template x-if="isCollapsible(event)">
                 <details class="space-y-3">
@@ -150,9 +150,9 @@
             <label class="text-sm text-slate-300" for="prompt">Mensagem</label>
           </div>
           <div class="relative">
-            <textarea id="prompt" class="input min-h-[104px]" x-model="claudePrompt"
+            <textarea id="prompt" class="input min-h-[104px]" x-model="chatPrompt"
               placeholder="Pergunte algo sobre os dados ou digite / para começar"
-              @keydown.enter.meta.prevent="runClaude()" @keydown.enter.ctrl.prevent="runClaude()"
+              @keydown.enter.meta.prevent="runChat()" @keydown.enter.ctrl.prevent="runChat()"
               @keydown="handlePromptKeydown($event)" @input="handlePromptInput($event)"></textarea>
             <template x-if="autoToolMenuOpen">
               <div class="auto-tool-menu" @click.outside="autoToolMenuOpen = false">
@@ -191,14 +191,14 @@
               </select>
             </div>
             <div class="flex items-center gap-3">
-              <button type="button" class="btn-primary" @click="runClaude()" :disabled="claudeBusy">
-                <span x-show="!claudeBusy">Enviar</span>
-                <span x-show="claudeBusy" class="flex items-center gap-2">
+              <button type="button" class="btn-primary" @click="runChat()" :disabled="chatBusy">
+                <span x-show="!chatBusy">Enviar</span>
+                <span x-show="chatBusy" class="flex items-center gap-2">
                   <span class="h-2 w-2 rounded-full bg-slate-100 animate-ping"></span>
                   Enviando...
                 </span>
               </button>
-              <p class="text-sm text-rose-200" x-show="claudeError" x-text="claudeError"></p>
+              <p class="text-sm text-rose-200" x-show="chatError" x-text="chatError"></p>
             </div>
           </div>
           <p class="text-xs text-amber-200" x-show="unidadesErro" x-text="unidadesErro"></p>
@@ -690,40 +690,63 @@
               </div>
               <button type="button" class="btn-ghost" @click="configOpen = false">Fechar</button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label class="space-y-1 text-sm">
-                <span class="text-slate-200">Host</span>
-                <input class="input" type="text" x-model="config.host" placeholder="localhost" />
-              </label>
-              <label class="space-y-1 text-sm">
-                <span class="text-slate-200">Porta</span>
-                <input class="input" type="text" x-model="config.port" placeholder="5432" />
-              </label>
-              <label class="space-y-1 text-sm">
-                <span class="text-slate-200">Database</span>
-                <input class="input" type="text" x-model="config.name" placeholder="postgres" />
-              </label>
-              <label class="space-y-1 text-sm">
-                <span class="text-slate-200">Usuário</span>
-                <input class="input" type="text" x-model="config.user" placeholder="esus" />
-              </label>
-              <label class="space-y-1 text-sm md:col-span-2">
-                <span class="text-slate-200">Senha</span>
-                <input class="input" type="password" x-model="config.password" placeholder="••••••" />
-              </label>
-              <label class="space-y-1 text-sm md:col-span-2">
-                <span class="text-slate-200">Anthropic API Key</span>
-                <input class="input" type="password" x-model="claudeApiKey" placeholder="sk-ant-..." />
-              </label>
-              <label class="space-y-1 text-sm">
-                <span class="text-slate-200">Modelo Claude</span>
-                <input class="input" type="text" x-model="claudeModel" placeholder="claude-3-5-sonnet-20241022" />
-              </label>
-              <label class="space-y-1 text-sm md:col-span-2">
-                <span class="text-slate-200">System prompt (opcional)</span>
-                <textarea class="input min-h-[96px]" x-model="claudeSystem"></textarea>
-              </label>
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="space-y-1 text-sm">
+                        <span class="text-slate-200">Host (DB)</span>
+                        <input class="input" type="text" x-model="config.host" placeholder="localhost" />
+                    </label>
+                    <label class="space-y-1 text-sm">
+                        <span class="text-slate-200">Porta (DB)</span>
+                        <input class="input" type="text" x-model="config.port" placeholder="5432" />
+                    </label>
+                    <label class="space-y-1 text-sm">
+                        <span class="text-slate-200">Database</span>
+                        <input class="input" type="text" x-model="config.name" placeholder="postgres" />
+                    </label>
+                    <label class="space-y-1 text-sm">
+                        <span class="text-slate-200">Usuário</span>
+                        <input class="input" type="text" x-model="config.user" placeholder="esus" />
+                    </label>
+                    <label class="space-y-1 text-sm md:col-span-2">
+                        <span class="text-slate-200">Senha</span>
+                        <input class="input" type="password" x-model="config.password" placeholder="••••••" />
+                    </label>
+                </div>
+                
+                <hr class="border-slate-800" />
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="space-y-1 text-sm md:col-span-2">
+                        <span class="text-slate-200">LLM Provider</span>
+                        <select class="input" x-model="chatProvider">
+                            <option value="anthropic">Anthropic (Claude)</option>
+                            <option value="openai">OpenAI (GPT)</option>
+                            <option value="ollama">Ollama (Local)</option>
+                        </select>
+                    </label>
+                    
+                    <label class="space-y-1 text-sm md:col-span-2">
+                        <span class="text-slate-200">API Key</span>
+                        <input class="input" type="password" x-model="chatApiKey" placeholder="sk-..." />
+                    </label>
+                    
+                    <label class="space-y-1 text-sm">
+                        <span class="text-slate-200">Model Name</span>
+                        <input class="input" type="text" x-model="chatModel" placeholder="claude-3-5-sonnet... / gpt-4... / llama3" />
+                    </label>
+                     <label class="space-y-1 text-sm">
+                        <span class="text-slate-200">API Base URL (Optional)</span>
+                        <input class="input" type="text" x-model="chatApiBase" placeholder="http://localhost:11434" />
+                    </label>
+                    
+                    <label class="space-y-1 text-sm md:col-span-2">
+                        <span class="text-slate-200">System prompt (opcional)</span>
+                        <textarea class="input min-h-[96px]" x-model="chatSystem"></textarea>
+                    </label>
+                </div>
             </div>
+            
             <div class="flex items-center gap-3">
               <button class="btn-primary" type="button" @click="saveConfig()" :disabled="savingConfig">
                 <span x-show="!savingConfig">Salvar</span>

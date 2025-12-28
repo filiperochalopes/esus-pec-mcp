@@ -2,8 +2,15 @@ mcp[cli]
 psycopg2-binary
 python-dotenv
 fastapi
+pydantic
 uvicorn[standard]
 jinja2
 typing_extensions
 anthropic
 pytest
+langchain
+langchain-core
+langchain-community
+langchain-anthropic
+langchain-openai
+langchain-ollama

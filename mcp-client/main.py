@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 from config import DbConfig, apply_db_config, load_db_config, persist_db_config
 from pec_mcp.db import get_connection, query_all, query_one
 from services.mcp_proxy import call_tool, list_tools
-from services.claude_agent import reset_conversation, run_claude_chat
+from services.llm_agent import reset_conversation, run_llm_chat
 from fastapi import Query
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -56,9 +56,11 @@ class ToolCallPayload(BaseModel):
     arguments: Optional[Dict[str, Any]] = Field(default=None, description="Payload de argumentos")
 
 
-class ClaudeChatPayload(BaseModel):
-    api_key: str = Field(..., description="Anthropic API key")
-    model: str = Field(..., description="Modelo Claude (ex.: claude-3-5-sonnet-20241022)")
+class ChatPayload(BaseModel):
+    provider: str = Field(default="anthropic", description="Provedor de LLM (anthropic, openai, ollama)")
+    api_key: Optional[str] = Field(default=None, description="API key do provedor")
+    api_base: Optional[str] = Field(default=None, description="Base URL para Ollama/OpenAI compatível")
+    model: str = Field(..., description="Nome do modelo (ex.: claude-3-5-sonnet, gpt-4o, llama3)")
     prompt: str = Field(..., description="Mensagem do usuário")
     system_prompt: str = Field(
         default=(
@@ -68,14 +70,14 @@ class ClaudeChatPayload(BaseModel):
             "Em tabelas Markdown, coloque o @<paciente_id> em uma coluna ou célula própria para não quebrar a formatação. "
             "Não invente ids."
         ),
-        description="System prompt a ser passado ao Claude.",
+        description="System prompt a ser passado ao agente.",
     )
-    max_turns: int = Field(default=4, ge=1, le=8, description="Máximo de iterações tool calling.")
+    max_turns: int = Field(default=4, ge=1, le=10, description="Máximo de iterações tool calling.")
     tool_alias: str = Field(default="server", description="Prefixo de alias para as tools MCP.")
     conversation_id: Optional[str] = Field(default=None, description="ID da conversa em memória.")
 
 
-class ClaudeResetPayload(BaseModel):
+class ChatResetPayload(BaseModel):
     conversation_id: str = Field(..., description="ID da conversa para limpar")
 
 
@@ -865,19 +867,22 @@ def _calc_saude_360_c3_detail(
 async def index(request: Request):
     cfg = load_db_config()
     initial_config_json = json.dumps(cfg.as_dict())
-    model_env = os.getenv("ANTHROPIC_MODEL") or os.getenv("CLAUDE_MODEL")
-    claude_defaults = {
-        "api_key": os.getenv("ANTHROPIC_API_KEY", ""),
-        # Usa ANTHROPIC_MODEL (ou CLAUDE_MODEL por compat) e cai em sonnet padrão.
-        "model": model_env or "claude-3-5-sonnet-20241022",
+    
+    # Defaults from env
+    chat_defaults = {
+        "provider": os.getenv("LLM_PROVIDER", "anthropic"),
+        "api_key": os.getenv("LLM_API_KEY") or os.getenv("ANTHROPIC_API_KEY", ""),
+        "api_base": os.getenv("LLM_API_BASE", ""),
+        "model": os.getenv("LLM_MODEL") or os.getenv("ANTHROPIC_MODEL") or "claude-3-5-sonnet-20241022",
     }
+    
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
             "initial_config": cfg.as_dict(),
             "initial_config_json": initial_config_json,
-            "claude_defaults": claude_defaults,
+            "chat_defaults": chat_defaults,
         },
     )
 
@@ -918,26 +923,28 @@ async def api_call_tool(payload: ToolCallPayload):
     return result
 
 
-@app.post("/api/claude/chat")
-async def api_claude_chat(payload: ClaudeChatPayload):
+@app.post("/api/chat/run")
+async def api_chat_run(payload: ChatPayload):
     try:
         conversation_id, events = await run_in_threadpool(
-            run_claude_chat,
-            payload.api_key,
+            run_llm_chat,
+            payload.provider,
             payload.model,
+            payload.api_key,
             payload.prompt,
             payload.system_prompt,
             payload.max_turns,
             payload.tool_alias,
             payload.conversation_id,
+            payload.api_base
         )
-    except Exception as exc:  # pragma: no cover - dependente do cliente Anthropic
+    except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return {"conversation_id": conversation_id, "events": events}
 
 
-@app.post("/api/claude/reset")
-async def api_claude_reset(payload: ClaudeResetPayload):
+@app.post("/api/chat/reset")
+async def api_chat_reset(payload: ChatResetPayload):
     reset_conversation(payload.conversation_id)
     return {"ok": True}
 
