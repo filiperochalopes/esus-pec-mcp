@@ -88,6 +88,45 @@
 - **Guardrails**:
   - Apenas leitura; ordena pelo nome da unidade.
 
+# Tool: contar_pacientes_sem_consulta
+
+- **Descrição**: retorna apenas a contagem (`count`) de pacientes sem consulta recente (médicos/enfermeiros) por perfil clínico: `hipertensao`, `diabetes` ou `gestante`.
+- **Consulta**: somente leitura; não retorna lista de pacientes.
+- **Tabelas/colunas relevantes**:
+  - `tb_atend_prof` + `tb_atend`: base para última consulta (`dt_inicio`) com filtro de CBO médico/enfermeiro.
+  - `tb_lotacao` / `tb_cbo`: filtro por CBO (`co_cbo_2002` prefixos `225%` e `2235%`).
+  - `tb_problema` + `tb_cid10` + `tb_ciap`: identifica hipertensão/diabetes via CID-10/CIAP.
+  - `tb_pre_natal`: identifica gestantes ativas (`dt_desfecho IS NULL`).
+  - `tb_cidadao`: vínculo do paciente (`co_seq_cidadao`) e filtros opcionais de unidade.
+  - `tb_cidadao_vinculacao_equipe` + `tb_unidade_saude`: filtro opcional de unidade por CNES.
+- **Filtros suportados**:
+  - `tipo` (obrigatório): `hipertensao`, `diabetes` ou `gestante`.
+  - `dias_sem_consulta` (opcional; default 180 para hipertensão/diabetes e 60 para gestantes).
+  - `unidade_saude_id` (opcional; filtra pacientes vinculados e considera consultas apenas na unidade).
+- **Gestantes**:
+  - Aplica o mesmo recorte de idade gestacional do `listar_gestantes` (2 a 42 semanas), baseado em `dt_ultima_menstruacao`.
+- **Guardrails**:
+  - Retorna somente contagem agregada.
+  - `unidade_saude_id` valida inteiro positivo quando informado.
+  - Sempre filtra consultas por CBO médico (`225%`) e enfermeiro (`2235%`).
+
+# Tool: listar_pacientes_sem_consulta
+
+- **Descrição**: lista pacientes sem consulta recente (médicos/enfermeiros) por perfil clínico, com paginação.
+- **Consulta**: somente leitura; retorna apenas iniciais do paciente.
+- **Tabelas/colunas relevantes**: mesmas de `contar_pacientes_sem_consulta`.
+- **Filtros suportados**:
+  - `tipo` (obrigatório): `hipertensao`, `diabetes` ou `gestante`.
+  - `dias_sem_consulta` (opcional; default 180/60).
+  - `unidade_saude_id` (opcional).
+  - `limite` (1–200; default 50) e `offset` (>= 0).
+- **Gestantes**:
+  - Mesmo recorte de idade gestacional do `listar_gestantes` (2 a 42 semanas).
+- **Guardrails**:
+  - Retorna apenas iniciais, data de nascimento, sexo, última consulta e dias desde a última consulta.
+  - Limite máximo de 200 registros por chamada.
+  - Ordena por `ultima_consulta` (NULLS FIRST) para priorizar quem não tem consulta registrada.
+
 # Tool: listar_ultimos_atendimentos_soap
 
 - **Descrição**: recupera os últimos atendimentos SOAP (S/O/A/P) de um paciente específico, incluindo data/hora, profissional e CBO.

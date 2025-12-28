@@ -301,6 +301,20 @@ const createMcpConsole = () => ({
       filters: 'Exige pelo menos um critério; suporta AND/OR em múltiplos CIDs; sem payload de pacientes.',
     },
     {
+      id: 'contar_pacientes_sem_consulta',
+      name: 'contar_pacientes_sem_consulta',
+      scope: 'somente leitura',
+      description: 'Conta hipertensos/diabéticos/gestantes sem consulta recente com médico/enfermeiro.',
+      filters: 'Obrigatório tipo; dias_sem_consulta (default 180/60); unidade_saude_id opcional.',
+    },
+    {
+      id: 'listar_pacientes_sem_consulta',
+      name: 'listar_pacientes_sem_consulta',
+      scope: 'somente leitura',
+      description: 'Lista pacientes sem consulta recente por condição (hipertensão/diabetes/gestação) com paginação.',
+      filters: 'Obrigatório tipo; limite/offset; retorna iniciais, data de nascimento, sexo e última consulta.',
+    },
+    {
       id: 'listar_unidades_saude',
       name: 'listar_unidades_saude',
       scope: 'somente leitura',

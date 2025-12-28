@@ -22,6 +22,7 @@ from pec_mcp.tools.obter_codigos_condicao_saude import obter_codigos_condicao_sa
 from pec_mcp.tools.contar_pacientes import contar_pacientes
 from pec_mcp.tools.unidades import listar_unidades_saude
 from pec_mcp.tools.atendimentos import listar_ultimos_atendimentos_soap
+from pec_mcp.tools.sem_consulta import contar_pacientes_sem_consulta, listar_pacientes_sem_consulta
 
 
 class _Ctx:
@@ -197,6 +198,73 @@ TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {
                 "condition_text": {"type": "string", "description": "Trecho textual para descrições/observações."},
             },
             "required": [],
+        },
+    },
+    "contar_pacientes_sem_consulta": {
+        "func": contar_pacientes_sem_consulta,
+        "description": (
+            "Conta pacientes com hipertensao/diabetes/gestacao sem consulta recente "
+            "com medico/enfermeiro (CBO 225%/2235%); retorna apenas {count}."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "tipo": {
+                    "type": "string",
+                    "enum": ["hipertensao", "diabetes", "gestante"],
+                    "description": "Perfil clinico para o filtro (obrigatorio).",
+                },
+                "dias_sem_consulta": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Dias desde a ultima consulta (default 180 para hipertensao/diabetes e 60 para gestantes).",
+                },
+                "unidade_saude_id": {
+                    "type": "integer",
+                    "description": "Filtra pacientes vinculados e considera consultas apenas na unidade.",
+                },
+            },
+            "required": ["tipo"],
+        },
+    },
+    "listar_pacientes_sem_consulta": {
+        "func": listar_pacientes_sem_consulta,
+        "description": (
+            "Lista pacientes com hipertensao/diabetes/gestacao sem consulta recente "
+            "com medico/enfermeiro (CBO 225%/2235%), com paginacao."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "tipo": {
+                    "type": "string",
+                    "enum": ["hipertensao", "diabetes", "gestante"],
+                    "description": "Perfil clinico para o filtro (obrigatorio).",
+                },
+                "dias_sem_consulta": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Dias desde a ultima consulta (default 180 para hipertensao/diabetes e 60 para gestantes).",
+                },
+                "unidade_saude_id": {
+                    "type": "integer",
+                    "description": "Filtra pacientes vinculados e considera consultas apenas na unidade.",
+                },
+                "limite": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 200,
+                    "default": 50,
+                    "description": "Quantidade maxima de registros (1-200).",
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0,
+                    "description": "Offset de paginacao (>= 0).",
+                },
+            },
+            "required": ["tipo"],
         },
     },
     "listar_unidades_saude": {

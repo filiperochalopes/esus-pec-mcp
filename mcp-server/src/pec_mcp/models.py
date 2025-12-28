@@ -93,6 +93,15 @@ class SOAPCondition(TypedDict, total=False):
     situacao_id: Optional[str]
 
 
+class PacienteSemConsultaResult(TypedDict):
+    paciente_id: int
+    paciente_initials: str
+    birth_date: Optional[str]
+    sex: Optional[str]
+    ultima_consulta: Optional[str]
+    dias_sem_consulta: Optional[int]
+
+
 __all__ = [
     "PatientCaptureResult",
     "ConditionResult",
@@ -102,4 +111,5 @@ __all__ = [
     "HealthUnitResult",
     "AtendimentoSOAPResult",
     "SOAPCondition",
+    "PacienteSemConsultaResult",
 ]
