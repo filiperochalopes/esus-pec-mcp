@@ -1,0 +1,24 @@
+# Tool: listar_pacientes_sem_consulta
+
+- **Descrição**: lista pacientes sem consulta recente (médicos/enfermeiros) por perfil clínico, com paginação.
+- **Consulta**: somente leitura.
+- **Parâmetros**:
+  - `tipo` (obrigatório): `hipertensao`, `diabetes` ou `gestante`.
+  - `dias_sem_consulta` (opcional): número de dias desde a última consulta; default 180 (hipertensão/diabetes) ou 60 (gestantes).
+  - `unidade_saude_id` (opcional): limita pacientes vinculados à unidade e considera consultas apenas nessa unidade.
+  - `limite` (opcional): 1–200, default 50.
+  - `offset` (opcional): >= 0, default 0.
+- **Saída**:
+  - `paciente_id`, `paciente_initials`, `birth_date`, `sex`
+  - `ultima_consulta` (data ISO) e `dias_sem_consulta`
+- **Tabelas/colunas relevantes**:
+  - `tb_atend_prof`, `tb_atend`, `tb_lotacao`, `tb_cbo` para última consulta e filtro por CBO (`225%` / `2235%`).
+  - `tb_problema`, `tb_cid10`, `tb_ciap` para hipertensão/diabetes.
+  - `tb_pre_natal` para gestantes ativas (`dt_desfecho IS NULL`).
+  - `tb_prontuario`, `tb_cidadao` para vincular paciente e dados demográficos mínimos.
+  - `tb_cidadao_vinculacao_equipe` + `tb_unidade_saude` para vínculo por CNES quando `unidade_saude_id` é informado.
+- **Filtros/guardrails**:
+  - Retorna apenas iniciais, nunca nome completo.
+  - Limite máximo de 200 registros por chamada.
+  - Ordena por `ultima_consulta` (NULLS FIRST) e `paciente_id` para paginação estável.
+  - Gestantes usam o mesmo recorte de idade gestacional do `listar_gestantes` (2–42 semanas).
