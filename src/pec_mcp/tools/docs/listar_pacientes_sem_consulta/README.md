@@ -21,4 +21,4 @@
   - Retorna apenas iniciais, nunca nome completo.
   - Limite máximo de 200 registros por chamada.
   - Ordena por `ultima_consulta` (NULLS FIRST) e `paciente_id` para paginação estável.
-  - Gestantes usam o mesmo recorte de idade gestacional do `listar_gestantes` (2–42 semanas).
+  - Gestantes usam o mesmo recorte de idade gestacional do `listar_gestantes` (1–42 semanas).

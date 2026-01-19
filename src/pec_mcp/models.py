@@ -102,6 +102,19 @@ class PacienteSemConsultaResult(TypedDict):
     dias_sem_consulta: Optional[int]
 
 
+class GestanteResult(TypedDict):
+    gestacao_id: int
+    paciente_id: int
+    nome_paciente: str
+    dpp: Optional[str]
+    idade_gestacional_semanas: Optional[int]
+    idade_gestacional_dias: Optional[int]
+    idade_gestacional_str: Optional[str]
+    tp_gravidez: Optional[str]
+    st_alto_risco: Optional[str]
+    situacao: Optional[str]
+
+
 __all__ = [
     "PatientCaptureResult",
     "ConditionResult",
@@ -112,4 +125,5 @@ __all__ = [
     "AtendimentoSOAPResult",
     "SOAPCondition",
     "PacienteSemConsultaResult",
+    "GestanteResult",
 ]

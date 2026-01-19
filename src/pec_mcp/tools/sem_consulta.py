@@ -68,7 +68,7 @@ def _build_base_sql(tipo: str) -> Tuple[str, List]:
         FROM tb_pre_natal pn
         JOIN tb_prontuario pr ON pr.co_seq_prontuario = pn.co_prontuario
         WHERE pn.dt_desfecho IS NULL
-          AND (CURRENT_DATE - pn.dt_ultima_menstruacao::date) BETWEEN 14 AND 294
+          AND (CURRENT_DATE - pn.dt_ultima_menstruacao::date) BETWEEN 7 AND 294
         """
         return sql, []
 

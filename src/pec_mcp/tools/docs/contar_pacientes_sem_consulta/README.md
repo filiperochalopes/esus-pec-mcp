@@ -23,4 +23,4 @@
   - CBO restrito a médicos (`225%`) e enfermeiros (`2235%`).
   - `unidade_saude_id`, quando fornecido, deve ser inteiro positivo.
   - Não retorna nomes ou identificadores sensíveis.
-  - Gestantes usam o mesmo recorte de idade gestacional do `listar_gestantes` (2–42 semanas).
+  - Gestantes usam o mesmo recorte de idade gestacional do `listar_gestantes` (1–42 semanas).

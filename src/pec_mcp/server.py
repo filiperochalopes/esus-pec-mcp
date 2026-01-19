@@ -46,6 +46,7 @@ from .tools.contar_pacientes import contar_pacientes
 from .tools.unidades import listar_unidades_saude
 from .tools.atendimentos import listar_ultimos_atendimentos_soap
 from .tools.sem_consulta import contar_pacientes_sem_consulta, listar_pacientes_sem_consulta
+from .tools.gestantes import listar_gestantes
 
 # Registro das tools no MCP.
 mcp.tool()(capturar_paciente)
@@ -56,6 +57,7 @@ mcp.tool()(listar_unidades_saude)
 mcp.tool()(listar_ultimos_atendimentos_soap)
 mcp.tool()(contar_pacientes_sem_consulta)
 mcp.tool()(listar_pacientes_sem_consulta)
+mcp.tool()(listar_gestantes)
 
 
 def main() -> Any:

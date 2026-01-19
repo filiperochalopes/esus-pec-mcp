@@ -104,7 +104,7 @@
   - `dias_sem_consulta` (opcional; default 180 para hipertensão/diabetes e 60 para gestantes).
   - `unidade_saude_id` (opcional; filtra pacientes vinculados e considera consultas apenas na unidade).
 - **Gestantes**:
-  - Aplica o mesmo recorte de idade gestacional do `listar_gestantes` (2 a 42 semanas), baseado em `dt_ultima_menstruacao`.
+  - Aplica o mesmo recorte de idade gestacional do `listar_gestantes` (1 a 42 semanas), baseado em `dt_ultima_menstruacao`.
 - **Guardrails**:
   - Retorna somente contagem agregada.
   - `unidade_saude_id` valida inteiro positivo quando informado.
@@ -121,11 +121,30 @@
   - `unidade_saude_id` (opcional).
   - `limite` (1–200; default 50) e `offset` (>= 0).
 - **Gestantes**:
-  - Mesmo recorte de idade gestacional do `listar_gestantes` (2 a 42 semanas).
+  - Mesmo recorte de idade gestacional do `listar_gestantes` (1 a 42 semanas).
 - **Guardrails**:
   - Retorna apenas iniciais, data de nascimento, sexo, última consulta e dias desde a última consulta.
   - Limite máximo de 200 registros por chamada.
   - Ordena por `ultima_consulta` (NULLS FIRST) para priorizar quem não tem consulta registrada.
+
+# Tool: listar_gestantes
+
+- **Descrição**: lista gestações ativas em acompanhamento pré-natal, com idade gestacional calculada.
+- **Consulta**: somente leitura.
+- **Tabelas/colunas relevantes**:
+  - `tb_pre_natal`: `co_seq_pre_natal`, `co_prontuario`, `dt_ultima_menstruacao`, `dt_desfecho`, `tp_gravidez`, `st_alto_risco`
+  - `tb_prontuario`: `co_seq_prontuario`, `co_cidadao`
+  - `tb_cidadao`: `co_seq_cidadao`, `no_cidadao`
+  - `tb_exame_prenatal`: `co_exame_requisitado`, `dt_provavel_parto_eco` (DPP via eco)
+- **Filtros suportados**:
+  - `trimestre` (opcional: `primeiro`, `segundo`, `terceiro`)
+  - `limite` (1–200; default 50)
+- **Guardrails**:
+  - Considera apenas gestantes ativas (`dt_desfecho IS NULL`).
+  - Recorte de idade gestacional: 1 a 42 semanas, baseado em `dt_ultima_menstruacao`.
+  - DPP calculada por eco quando disponível, senão `DUM + 280 dias`.
+  - Idade gestacional formatada como `<semanas>s<dias>d` (ex.: `12s3d`).
+  - Limite máximo de 200 linhas para evitar vazamento massivo.
 
 # Tool: listar_ultimos_atendimentos_soap
 

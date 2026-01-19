@@ -1,0 +1,44 @@
+# Byte-compiled / optimization files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# macOS
+.DS_Store
+
+# Logs and databases
+*.log
+*.sqlite3
+
+# Python-specific
+pip-log.txt
+pip-delete-this-directory.txt
+coverage/
+htmlcov/
+.coverage
+
+# Tests
+pytest_cache/
+
+# Misc
+*.pyc
+*.pyo
+

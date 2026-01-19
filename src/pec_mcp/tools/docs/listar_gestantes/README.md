@@ -1,0 +1,23 @@
+# Tool: listar_gestantes
+
+- **Descricao**: lista gestacoes ativas em acompanhamento pre-natal, com idade gestacional e DPP.
+- **Consulta**: somente leitura.
+- **Tabelas/colunas relevantes**:
+  - `tb_pre_natal`:
+    - `co_seq_pre_natal` (PK da gestacao)
+    - `co_prontuario` (FK para prontuario/paciente)
+    - `dt_ultima_menstruacao` (DUM para idade gestacional)
+    - `dt_desfecho` (gestacao ativa quando NULL)
+    - `tp_gravidez`, `st_alto_risco`
+  - `tb_prontuario`: `co_seq_prontuario`, `co_cidadao`
+  - `tb_cidadao`: `co_seq_cidadao`, `no_cidadao`
+  - `tb_exame_prenatal`: `co_exame_requisitado`, `dt_provavel_parto_eco`
+- **Filtros suportados**:
+  - `trimestre` (opcional): `primeiro`, `segundo`, `terceiro`
+  - `limite` (1-200; default 50)
+- **Guardrails**:
+  - Considera apenas gestacoes ativas (`dt_desfecho IS NULL`).
+  - Recorte de idade gestacional: 1 a 42 semanas, baseado em DUM.
+  - DPP calculada por eco quando disponivel; fallback para `DUM + 280 dias`.
+  - Idade gestacional formatada como `<semanas>s<dias>d` (ex.: `12s3d`).
+  - Limite maximo de 200 registros por chamada.

@@ -4,7 +4,7 @@ Tool para listar gestações em acompanhamento pré-natal.
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional, Tuple
 
 from mcp.server.fastmcp import Context
 
@@ -43,27 +43,64 @@ SELECT
     (g.gest_days %% 7)                           AS idade_gestacional_dias,
     (g.gest_days / 7)::text
       || 's' ||
-    (g.gest_days %% 7)::text                     AS idade_gestacional_str,
+    (g.gest_days %% 7)::text
+      || 'd'                                     AS idade_gestacional_str,
     g.tp_gravidez,
     g.st_alto_risco,
     'ativa'                                      AS situacao
 FROM g
 WHERE
-    g.gest_days BETWEEN 14 AND 294   -- 2s a 42s
+    g.gest_days BETWEEN %s AND %s   -- 1s a 42s
+    {trimestre_clause}
 ORDER BY dpp
 LIMIT %s;
 """
 
+_TRIMESTRE_RANGE = {
+    "primeiro": (1, 12),
+    "1": (1, 12),
+    "1o": (1, 12),
+    "segundo": (13, 26),
+    "2": (13, 26),
+    "2o": (13, 26),
+    "terceiro": (27, 42),
+    "3": (27, 42),
+    "3o": (27, 42),
+}
 
-def listar_gestantes(ctx: Context, limite: int = 50) -> List[GestanteResult]:
+
+def _resolve_trimestre(trimestre: Optional[str]) -> Optional[Tuple[int, int]]:
+    if trimestre is None:
+        return None
+    value = str(trimestre).strip().lower()
+    if not value:
+        return None
+    if value in _TRIMESTRE_RANGE:
+        return _TRIMESTRE_RANGE[value]
+    raise ValueError("trimestre inválido. Use: primeiro, segundo ou terceiro.")
+
+
+def listar_gestantes(
+    ctx: Context,
+    limite: int = 50,
+    trimestre: Optional[str] = None,
+) -> List[GestanteResult]:
     """
-    Lista gestações ativas entre 2 e 42 semanas de acompanhamento.
+    Lista gestações ativas entre 1 e 42 semanas de acompanhamento.
     """
 
     # Limitamos para evitar consultas excessivas em contextos de LLM.
     safe_limit = max(1, min(limite, 200))
+    trimestre_range = _resolve_trimestre(trimestre)
+    trimestre_clause = ""
+    params: List = [7, 294]
+    if trimestre_range is not None:
+        trimestre_clause = "AND (g.gest_days / 7) BETWEEN %s AND %s"
+        params.extend(list(trimestre_range))
+    params.append(safe_limit)
+    sql = _SQL_GESTANTES.format(trimestre_clause=trimestre_clause)
     conn = get_db_conn(ctx)
-    rows = query_all(conn, _SQL_GESTANTES, (safe_limit,))
+    rows = query_all(conn, sql, params)
 
     results: List[GestanteResult] = []
     for row in rows:
