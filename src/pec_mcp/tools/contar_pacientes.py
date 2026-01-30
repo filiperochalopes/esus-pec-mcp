@@ -32,6 +32,8 @@ def contar_pacientes(
     age_min: Optional[int] = None,
     age_max: Optional[int] = None,
     unidade_saude_id: Optional[int] = None,
+    equipe_id: Optional[int] = None,
+    micro_area: Optional[str] = None,
     cid_code: Optional[str] = None,
     cid_codes: Optional[list[str]] = None,
     ciap_code: Optional[str] = None,
@@ -42,7 +44,8 @@ def contar_pacientes(
 ) -> CountResult:
     """
     Retorna apenas a contagem de pacientes distintos de acordo com filtros.
-    Aceita filtro opcional de unidade de saúde (atendimento ou vinculação por CNES).
+    Aceita filtro opcional de unidade de saúde (atendimento ou vinculação por CNES),
+    equipe (co_seq_equipe) e microárea (nu_micro_area atual via cadastro individual).
     """
 
     patient_clauses, patient_params = build_patient_filters(
@@ -52,6 +55,8 @@ def contar_pacientes(
         age_min,
         age_max,
         unidade_saude_id=unidade_saude_id,
+        equipe_id=equipe_id,
+        micro_area=micro_area,
         alias="c",
     )
     condition_clauses, condition_params = build_condition_filters(

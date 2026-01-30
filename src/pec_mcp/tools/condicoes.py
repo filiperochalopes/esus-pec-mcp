@@ -72,6 +72,8 @@ def listar_condicoes_pacientes(
     age_min: Optional[int] = None,
     age_max: Optional[int] = None,
     unidade_saude_id: Optional[int] = None,
+    equipe_id: Optional[int] = None,
+    micro_area: Optional[str] = None,
     cid_code: Optional[str] = None,
     cid_codes: Optional[list[str]] = None,
     ciap_code: Optional[str] = None,
@@ -85,7 +87,8 @@ def listar_condicoes_pacientes(
     Lista condicoes de saude (CID/CIAP) registradas em pacientes.
 
     Exige pelo menos um criterio para evitar varreduras amplas.
-    Aceita filtro opcional de unidade de saude (atendimento ou vinculacao por CNES).
+    Aceita filtro opcional de unidade de saude (atendimento ou vinculacao por CNES),
+    equipe (co_seq_equipe) e microárea (nu_micro_area atual via cadastro individual).
     Nao use para descobrir codigos; para isso, use obter_codigos_condicao_saude.
     """
 
@@ -96,6 +99,8 @@ def listar_condicoes_pacientes(
         age_min,
         age_max,
         unidade_saude_id=unidade_saude_id,
+        equipe_id=equipe_id,
+        micro_area=micro_area,
         alias="c",
     )
     condition_clauses, condition_params = build_condition_filters(

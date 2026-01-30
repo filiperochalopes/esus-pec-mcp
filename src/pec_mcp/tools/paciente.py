@@ -47,13 +47,16 @@ def capturar_paciente(
     age_min: Optional[int] = None,
     age_max: Optional[int] = None,
     unidade_saude_id: Optional[int] = None,
+    equipe_id: Optional[int] = None,
+    micro_area: Optional[str] = None,
     limite: int = 50,
 ) -> List[PatientCaptureResult]:
     """
     Retorna dados mínimos de pacientes sem identificadores diretos (somente leitura).
 
     Exige ao menos um critério (id, prefixo de nome, sexo ou faixa etária) para evitar varreduras amplas.
-    Aceita filtro opcional de unidade de saúde (atendimento ou vinculação por CNES).
+    Aceita filtro opcional de unidade de saúde (atendimento ou vinculação por CNES),
+    equipe (co_seq_equipe) e microárea (nu_micro_area atual via cadastro individual).
     """
 
     safe_limit = max(1, min(limite, 200))
@@ -64,6 +67,8 @@ def capturar_paciente(
         age_min,
         age_max,
         unidade_saude_id=unidade_saude_id,
+        equipe_id=equipe_id,
+        micro_area=micro_area,
         alias="c",
     )
     if not clauses:

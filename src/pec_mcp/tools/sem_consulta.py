@@ -95,6 +95,8 @@ def _build_base_sql(tipo: str) -> Tuple[str, List]:
 def _build_sem_consulta_sql(
     tipo: str,
     unidade_saude_id: Optional[int],
+    equipe_id: Optional[int],
+    micro_area: Optional[str],
     dias_sem_consulta: int,
     select_sql: str,
     order_sql: str = "",
@@ -119,6 +121,8 @@ def _build_sem_consulta_sql(
         age_min=None,
         age_max=None,
         unidade_saude_id=unit_id,
+        equipe_id=equipe_id,
+        micro_area=micro_area,
         alias="c",
     )
 
@@ -162,10 +166,13 @@ def contar_pacientes_sem_consulta(
     ctx: Context,
     tipo: SemConsultaTipo,
     unidade_saude_id: Optional[int] = None,
+    equipe_id: Optional[int] = None,
+    micro_area: Optional[str] = None,
     dias_sem_consulta: Optional[int] = None,
 ) -> CountResult:
     """
     Conta pacientes sem consulta recente por perfil clínico.
+    Aceita filtros opcionais de unidade, equipe e microárea.
     """
 
     tipo_norm = _normalize_tipo(tipo)
@@ -174,6 +181,8 @@ def contar_pacientes_sem_consulta(
     sql, params = _build_sem_consulta_sql(
         tipo=tipo_norm,
         unidade_saude_id=unidade_saude_id,
+        equipe_id=equipe_id,
+        micro_area=micro_area,
         dias_sem_consulta=dias,
         select_sql="COUNT(DISTINCT bp.paciente_id) AS total",
     )
@@ -188,12 +197,15 @@ def listar_pacientes_sem_consulta(
     ctx: Context,
     tipo: SemConsultaTipo,
     unidade_saude_id: Optional[int] = None,
+    equipe_id: Optional[int] = None,
+    micro_area: Optional[str] = None,
     dias_sem_consulta: Optional[int] = None,
     limite: int = 50,
     offset: int = 0,
 ) -> List[PacienteSemConsultaResult]:
     """
     Lista pacientes sem consulta recente por perfil clínico (com paginação).
+    Aceita filtros opcionais de unidade, equipe e microárea.
     """
 
     tipo_norm = _normalize_tipo(tipo)
@@ -217,6 +229,8 @@ def listar_pacientes_sem_consulta(
     sql, params = _build_sem_consulta_sql(
         tipo=tipo_norm,
         unidade_saude_id=unidade_saude_id,
+        equipe_id=equipe_id,
+        micro_area=micro_area,
         dias_sem_consulta=dias,
         select_sql=select_sql,
         order_sql="ORDER BY ult.ultima_consulta NULLS FIRST, bp.paciente_id",

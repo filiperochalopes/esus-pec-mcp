@@ -20,13 +20,15 @@ SELECT
     us.co_localidade_endereco AS localidade_id,
     us.st_ativo               AS ativo
 FROM tb_unidade_saude us
+JOIN tb_tipo_unidade_saude tu ON tu.co_seq_tipo_unidade_saude = us.tp_unidade_saude
+WHERE tu.no_tipo_unidade_saude = 'CENTRO DE SAUDE/UNIDADE BASICA'
 ORDER BY us.no_unidade_saude;
 """
 
 
 def listar_unidades_saude(ctx: Context) -> List[HealthUnitResult]:
     """
-    Retorna todas as unidades de saúde (para popular selects de filtros).
+    Retorna unidades básicas de saúde (UBS) para popular selects de filtros.
     """
 
     conn = get_db_conn(ctx)

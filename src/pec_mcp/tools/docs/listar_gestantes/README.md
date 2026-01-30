@@ -14,6 +14,9 @@
   - `tb_exame_prenatal`: `co_exame_requisitado`, `dt_provavel_parto_eco`
 - **Filtros suportados**:
   - `trimestre` (opcional): `primeiro`, `segundo`, `terceiro`
+  - `unidade_saude_id` (opcional)
+  - `equipe_id` (opcional)
+  - `micro_area` (opcional)
   - `limite` (1-200; default 50)
 - **Guardrails**:
   - Considera apenas gestacoes ativas (`dt_desfecho IS NULL`).

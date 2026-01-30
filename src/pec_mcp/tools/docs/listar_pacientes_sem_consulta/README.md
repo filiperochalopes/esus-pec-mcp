@@ -6,6 +6,8 @@
   - `tipo` (obrigatório): `hipertensao`, `diabetes` ou `gestante`.
   - `dias_sem_consulta` (opcional): número de dias desde a última consulta; default 180 (hipertensão/diabetes) ou 60 (gestantes).
   - `unidade_saude_id` (opcional): limita pacientes vinculados à unidade e considera consultas apenas nessa unidade.
+  - `equipe_id` (opcional): filtra pacientes pela equipe vinculada (co_seq_equipe).
+  - `micro_area` (opcional): filtra pela microárea atual do cadastro individual (nu_micro_area).
   - `limite` (opcional): 1–200, default 50.
   - `offset` (opcional): >= 0, default 0.
 - **Saída**:
@@ -17,6 +19,8 @@
   - `tb_pre_natal` para gestantes ativas (`dt_desfecho IS NULL`).
   - `tb_prontuario`, `tb_cidadao` para vincular paciente e dados demográficos mínimos.
   - `tb_cidadao_vinculacao_equipe` + `tb_unidade_saude` para vínculo por CNES quando `unidade_saude_id` é informado.
+  - `tb_equipe`: `co_seq_equipe`, `nu_ine` (para filtro por equipe).
+  - `tb_fat_cad_individual` + `tb_fat_cidadao_pec`: microárea atual via cadastro individual.
 - **Filtros/guardrails**:
   - Retorna apenas iniciais, nunca nome completo.
   - Limite máximo de 200 registros por chamada.

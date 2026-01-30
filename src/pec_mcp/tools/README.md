@@ -14,12 +14,18 @@
     - usados para filtrar pacientes que têm atendimento na unidade escolhida
   - `tb_cidadao_vinculacao_equipe`:
     - `co_cidadao`, `nu_cnes` (CNES da equipe/unidade vinculada); cobre pacientes sem atendimento
+  - `tb_equipe`:
+    - `co_seq_equipe`, `nu_ine` (para filtrar por equipe)
+  - `tb_fat_cad_individual` + `tb_fat_cidadao_pec`:
+    - `nu_micro_area` (microárea), `co_dim_tempo` (mais recente), `st_ficha_inativa` (ativo/inativo)
 - **Filtros suportados**:
   - `paciente_id` (co_seq_cidadao)
   - `name_starts_with` (prefixo de nome, ILIKE)
   - `sex` (ex.: `MASCULINO`/`FEMININO`/`INDETERMINADO` ou aliases `M`/`F`/`I`)
   - `age_min` / `age_max` (anos, via `DATE_PART('year', AGE(...))`)
   - `unidade_saude_id` (co_seq_unidade_saude; opcional; usa atendimentos e vínculos por CNES)
+  - `equipe_id` (co_seq_equipe; opcional; via `tb_cidadao_vinculacao_equipe` + `tb_equipe`)
+  - `micro_area` (nu_micro_area; opcional; usa cadastro individual mais recente e ativo)
   - `limite` (1–200; default 50)
 - **Guardrails**:
   - Exige pelo menos um critério (id, prefixo, sexo ou idade) antes de consultar.
@@ -46,12 +52,16 @@
   - `tb_unidade_saude` / `tb_atend` / `tb_cidadao_vinculacao_equipe`:
     - `tb_atend.co_unidade_saude` aponta para `tb_unidade_saude.co_seq_unidade_saude` (CNES em `nu_cnes`)
     - filtro opcional `unidade_saude_id` considera atendimentos ou vínculos por CNES (tabela de vinculação)
+  - `tb_equipe`: `co_seq_equipe`, `nu_ine` (filtro por equipe)
+  - `tb_fat_cad_individual` + `tb_fat_cidadao_pec`: `nu_micro_area`, `co_dim_tempo`, `st_ficha_inativa` (microárea atual)
 - **Filtros suportados** (ao menos um é obrigatório):
   - `paciente_id` (co_seq_cidadao)
   - `name_starts_with` (prefixo de nome, ILIKE)
   - `sex` (MASCULINO/FEMININO/INDETERMINADO ou aliases M/F/I)
   - `age_min` / `age_max` (anos, via `DATE_PART('year', AGE(...))`)
   - `unidade_saude_id` (co_seq_unidade_saude; opcional; usa atendimentos e vínculos por CNES)
+  - `equipe_id` (co_seq_equipe; opcional; via vinculação por INE)
+  - `micro_area` (nu_micro_area; opcional; usa cadastro individual mais recente e ativo)
   - `cid_code` (código/prefixo CID-10, ILIKE) ou `cid_codes` (lista; combinados com `cid_logic`, default OR)
   - `cid_logic` (OR para múltiplos códigos; AND não é suportado na listagem)
   - `ciap_code` (código/prefixo CIAP, ILIKE)
@@ -67,9 +77,9 @@
 
 - **Descrição**: retorna apenas a contagem (`count`) de pacientes distintos aplicando filtros de paciente e/ou condição.
 - **Consulta**: somente leitura; não retorna payload de pacientes.
-- **Tabelas/colunas relevantes**: mesmas de `listar_condicoes_pacientes`, mas usa `COUNT(DISTINCT c.co_seq_cidadao)`; só faz JOIN em `tb_problema`/`tb_cid10`/`tb_ciap` se filtros de condição forem informados; `unidade_saude_id` usa `tb_atend` (co_unidade_saude) ou `tb_cidadao_vinculacao_equipe` (nu_cnes) cruzados com `tb_unidade_saude`.
+- **Tabelas/colunas relevantes**: mesmas de `listar_condicoes_pacientes`, mas usa `COUNT(DISTINCT c.co_seq_cidadao)`; só faz JOIN em `tb_problema`/`tb_cid10`/`tb_ciap` se filtros de condição forem informados; `unidade_saude_id` usa `tb_atend` (co_unidade_saude) ou `tb_cidadao_vinculacao_equipe` (nu_cnes) cruzados com `tb_unidade_saude`; `equipe_id` usa `tb_equipe` + `tb_cidadao_vinculacao_equipe`; `micro_area` usa `tb_fat_cad_individual`.
 - **Filtros suportados** (ao menos um é obrigatório):
-  - Paciente: `paciente_id`, `name_starts_with`, `sex`, `age_min`, `age_max`, `unidade_saude_id`
+  - Paciente: `paciente_id`, `name_starts_with`, `sex`, `age_min`, `age_max`, `unidade_saude_id`, `equipe_id`, `micro_area`
   - Condição: `cid_code`, `cid_codes` (lista), `cid_logic` (OR/AND), `ciap_code`, `condition_text` (ILIKE em descrições/observações)
 - **Guardrails**:
   - Exige pelo menos um filtro para evitar contagens amplas sem contexto.
@@ -78,13 +88,13 @@
 
 # Tool: listar_unidades_saude
 
-- **Descrição**: lista todas as unidades de saúde cadastradas (uso típico: popular select de filtro).
+- **Descrição**: lista unidades básicas de saúde (UBS) para uso em filtros.
 - **Consulta**: somente leitura.
 - **Tabelas/colunas relevantes**:
   - `tb_unidade_saude`:
     - `co_seq_unidade_saude` (PK usada nos filtros), `nu_cnes` (CNES), `no_unidade_saude`
     - `co_localidade_endereco`, `st_ativo`
-- **Filtros suportados**: nenhum (retorna todas as unidades; no dump atual são 21, com 12 usadas em atendimentos e 10 com vínculos por CNES).
+- **Filtros suportados**: nenhum (retorna apenas `CENTRO DE SAUDE/UNIDADE BASICA`).
 - **Guardrails**:
   - Apenas leitura; ordena pelo nome da unidade.
 
@@ -103,6 +113,8 @@
   - `tipo` (obrigatório): `hipertensao`, `diabetes` ou `gestante`.
   - `dias_sem_consulta` (opcional; default 180 para hipertensão/diabetes e 60 para gestantes).
   - `unidade_saude_id` (opcional; filtra pacientes vinculados e considera consultas apenas na unidade).
+  - `equipe_id` (opcional; filtra pacientes pela equipe vinculada).
+  - `micro_area` (opcional; microárea atual do cadastro individual).
 - **Gestantes**:
   - Aplica o mesmo recorte de idade gestacional do `listar_gestantes` (1 a 42 semanas), baseado em `dt_ultima_menstruacao`.
 - **Guardrails**:
@@ -119,6 +131,8 @@
   - `tipo` (obrigatório): `hipertensao`, `diabetes` ou `gestante`.
   - `dias_sem_consulta` (opcional; default 180/60).
   - `unidade_saude_id` (opcional).
+  - `equipe_id` (opcional).
+  - `micro_area` (opcional).
   - `limite` (1–200; default 50) e `offset` (>= 0).
 - **Gestantes**:
   - Mesmo recorte de idade gestacional do `listar_gestantes` (1 a 42 semanas).
@@ -138,6 +152,9 @@
   - `tb_exame_prenatal`: `co_exame_requisitado`, `dt_provavel_parto_eco` (DPP via eco)
 - **Filtros suportados**:
   - `trimestre` (opcional: `primeiro`, `segundo`, `terceiro`)
+  - `unidade_saude_id` (opcional)
+  - `equipe_id` (opcional)
+  - `micro_area` (opcional)
   - `limite` (1–200; default 50)
 - **Guardrails**:
   - Considera apenas gestantes ativas (`dt_desfecho IS NULL`).

@@ -37,6 +37,8 @@ def build_patient_filters(
     age_min: Optional[int],
     age_max: Optional[int],
     unidade_saude_id: Optional[int] = None,
+    equipe_id: Optional[int] = None,
+    micro_area: Optional[str] = None,
     alias: str = "c",
 ) -> Tuple[List[str], List]:
     """
@@ -90,6 +92,46 @@ def build_patient_filters(
             ")"
         )
         params.extend([unit_id, unit_id])
+
+    if equipe_id is not None:
+        team_id = int(equipe_id)
+        if team_id <= 0:
+            raise ValueError("equipe_id deve ser um inteiro positivo.")
+        clauses.append(
+            "("
+            "EXISTS ("
+            "SELECT 1 FROM tb_cidadao_vinculacao_equipe ve "
+            "JOIN tb_equipe e ON e.nu_ine = ve.nu_ine "
+            f"WHERE ve.co_cidadao = {alias}.co_seq_cidadao "
+            "AND e.co_seq_equipe = %s"
+            ")"
+            ")"
+        )
+        params.append(team_id)
+
+    if micro_area:
+        micro_value = str(micro_area).strip()
+        if micro_value:
+            clauses.append(
+                "("
+                "EXISTS ("
+                "SELECT 1 FROM tb_fat_cad_individual f "
+                "JOIN tb_fat_cidadao_pec fp ON fp.co_seq_fat_cidadao_pec = f.co_fat_cidadao_pec "
+                f"WHERE fp.co_cidadao = {alias}.co_seq_cidadao "
+                "AND f.nu_micro_area = %s "
+                "AND (f.st_ficha_inativa IS NULL OR f.st_ficha_inativa <> 1) "
+                "AND f.co_dim_tempo = ("
+                "   SELECT MAX(f2.co_dim_tempo) "
+                "   FROM tb_fat_cad_individual f2 "
+                "   JOIN tb_fat_cidadao_pec fp2 ON fp2.co_seq_fat_cidadao_pec = f2.co_fat_cidadao_pec "
+                f"   WHERE fp2.co_cidadao = {alias}.co_seq_cidadao "
+                "     AND f2.nu_micro_area IS NOT NULL AND f2.nu_micro_area <> '' "
+                "     AND (f2.st_ficha_inativa IS NULL OR f2.st_ficha_inativa <> 1)"
+                ")"
+                ")"
+                ")"
+            )
+            params.append(micro_value)
 
     return clauses, params
 

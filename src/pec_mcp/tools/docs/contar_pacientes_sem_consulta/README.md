@@ -6,6 +6,8 @@
   - `tipo` (obrigatório): `hipertensao`, `diabetes` ou `gestante`.
   - `dias_sem_consulta` (opcional): número de dias desde a última consulta; default 180 (hipertensão/diabetes) ou 60 (gestantes).
   - `unidade_saude_id` (opcional): limita pacientes vinculados à unidade e considera consultas apenas nessa unidade.
+  - `equipe_id` (opcional): filtra pacientes pela equipe vinculada (co_seq_equipe).
+  - `micro_area` (opcional): filtra pela microárea atual do cadastro individual (nu_micro_area).
 - **Tabelas/colunas relevantes**:
   - `tb_atend_prof`: `co_atend`, `co_lotacao` (liga atendimento profissional ao atendimento e à lotação).
   - `tb_atend`: `co_seq_atend`, `co_prontuario`, `co_unidade_saude`, `dt_inicio` (data da consulta).
@@ -18,6 +20,8 @@
   - `tb_ciap`: `co_ciap` (CIAP de hipertensão/diabetes).
   - `tb_pre_natal`: `co_prontuario`, `dt_desfecho` (gestação ativa quando `dt_desfecho` é NULL).
   - `tb_cidadao_vinculacao_equipe` + `tb_unidade_saude`: vinculação por CNES usada quando `unidade_saude_id` é informado.
+  - `tb_equipe`: `co_seq_equipe`, `nu_ine` (para filtro por equipe).
+  - `tb_fat_cad_individual` + `tb_fat_cidadao_pec`: microárea atual via cadastro individual.
 - **Filtros/guardrails**:
   - Retorna somente contagem agregada (`count`).
   - CBO restrito a médicos (`225%`) e enfermeiros (`2235%`).

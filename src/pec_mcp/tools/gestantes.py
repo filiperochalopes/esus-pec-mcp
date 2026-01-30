@@ -11,6 +11,7 @@ from mcp.server.fastmcp import Context
 from ..db import query_all
 from ..models import GestanteResult
 from . import get_db_conn, to_iso_datetime
+from .filters import build_patient_filters
 
 # Consulta baseada no enunciado. Se o schema real divergir, ajustar aqui.
 _SQL_GESTANTES = """
@@ -52,6 +53,7 @@ FROM g
 WHERE
     g.gest_days BETWEEN %s AND %s   -- 1s a 42s
     {trimestre_clause}
+    {patient_clause}
 ORDER BY dpp
 LIMIT %s;
 """
@@ -84,9 +86,13 @@ def listar_gestantes(
     ctx: Context,
     limite: int = 50,
     trimestre: Optional[str] = None,
+    unidade_saude_id: Optional[int] = None,
+    equipe_id: Optional[int] = None,
+    micro_area: Optional[str] = None,
 ) -> List[GestanteResult]:
     """
     Lista gestações ativas entre 1 e 42 semanas de acompanhamento.
+    Aceita filtros opcionais de unidade, equipe e microárea.
     """
 
     # Limitamos para evitar consultas excessivas em contextos de LLM.
@@ -97,8 +103,25 @@ def listar_gestantes(
     if trimestre_range is not None:
         trimestre_clause = "AND (g.gest_days / 7) BETWEEN %s AND %s"
         params.extend(list(trimestre_range))
+
+    patient_clauses, patient_params = build_patient_filters(
+        paciente_id=None,
+        name_prefix=None,
+        sex=None,
+        age_min=None,
+        age_max=None,
+        unidade_saude_id=unidade_saude_id,
+        equipe_id=equipe_id,
+        micro_area=micro_area,
+        alias="c",
+    )
+    patient_clause = ""
+    if patient_clauses:
+        patient_clause = "AND " + " AND ".join(patient_clauses)
+        params.extend(patient_params)
+
     params.append(safe_limit)
-    sql = _SQL_GESTANTES.format(trimestre_clause=trimestre_clause)
+    sql = _SQL_GESTANTES.format(trimestre_clause=trimestre_clause, patient_clause=patient_clause)
     conn = get_db_conn(ctx)
     rows = query_all(conn, sql, params)
 
