@@ -19,6 +19,7 @@ WITH g AS (
     SELECT
         pn.co_seq_pre_natal          AS gestacao_id,
         pr.co_cidadao                AS paciente_id,
+        pr.co_cidadao                AS co_seq_cidadao,
         c.no_cidadao                 AS nome_paciente,
         pn.dt_ultima_menstruacao,
         pn.dt_desfecho,
@@ -113,7 +114,7 @@ def listar_gestantes(
         unidade_saude_id=unidade_saude_id,
         equipe_id=equipe_id,
         micro_area=micro_area,
-        alias="c",
+        alias="g",
     )
     patient_clause = ""
     if patient_clauses:
