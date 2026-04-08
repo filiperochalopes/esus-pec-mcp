@@ -9,6 +9,7 @@ from typing import List, Optional, Tuple
 from mcp.server.fastmcp import Context
 
 from ..db import query_all
+from ..domain.patient import to_initials
 from ..models import GestanteResult
 from . import get_db_conn, to_iso_datetime
 from .filters import build_patient_filters
@@ -19,7 +20,6 @@ WITH g AS (
     SELECT
         pn.co_seq_pre_natal          AS gestacao_id,
         pr.co_cidadao                AS paciente_id,
-        pr.co_cidadao                AS co_seq_cidadao,
         c.no_cidadao                 AS nome_paciente,
         pn.dt_ultima_menstruacao,
         pn.dt_desfecho,
@@ -29,14 +29,13 @@ WITH g AS (
         (CURRENT_DATE - pn.dt_ultima_menstruacao::date) AS gest_days
     FROM tb_pre_natal pn
     JOIN tb_prontuario pr ON pr.co_seq_prontuario = pn.co_prontuario
-    JOIN tb_cidadao   c  ON c.co_seq_cidadao     = pr.co_cidadao
+    JOIN tb_cidadao c ON c.co_seq_cidadao = pr.co_cidadao
     LEFT JOIN tb_exame_prenatal ex ON ex.co_exame_requisitado = pn.co_seq_pre_natal
     WHERE pn.dt_desfecho IS NULL
 )
 SELECT
     g.gestacao_id,
     g.paciente_id,
-    g.nome_paciente,
     COALESCE(
         g.dt_provavel_parto_eco,
         (g.dt_ultima_menstruacao::date + INTERVAL '280 days')::date
@@ -135,7 +134,7 @@ def listar_gestantes(
             GestanteResult(
                 gestacao_id=int(row["gestacao_id"]),
                 paciente_id=int(row["paciente_id"]),
-                nome_paciente=str(row["nome_paciente"]),
+                paciente_initials=to_initials(row.get("nome_paciente")),
                 dpp=dpp_iso,
                 idade_gestacional_semanas=int(semanas) if semanas is not None else None,
                 idade_gestacional_dias=int(dias) if dias is not None else None,

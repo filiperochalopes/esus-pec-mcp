@@ -161,6 +161,7 @@
   - Recorte de idade gestacional: 1 a 42 semanas, baseado em `dt_ultima_menstruacao`.
   - DPP calculada por eco quando disponível, senão `DUM + 280 dias`.
   - Idade gestacional formatada como `<semanas>s<dias>d` (ex.: `12s3d`).
+  - Não retorna nome completo nem outros identificadores diretos da paciente.
   - Limite máximo de 200 linhas para evitar vazamento massivo.
 
 # Tool: listar_ultimos_atendimentos_soap

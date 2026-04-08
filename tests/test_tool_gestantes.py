@@ -33,4 +33,6 @@ def test_listar_gestantes_com_filtros_usa_alias_g(monkeypatch):
     assert "pr2.co_cidadao = c.co_seq_cidadao" not in sql
     assert "ve.co_cidadao = c.co_seq_cidadao" not in sql
     assert "fp.co_cidadao = c.co_seq_cidadao" not in sql
+    assert "no_cidadao" not in sql
+    assert "nome_paciente" not in sql
     assert captured["params"] == [7, 294, 3, 3, 4, "01", 50]

@@ -16,16 +16,16 @@ except ImportError:  # pragma: no cover - fallback para ambientes que já suport
 
 
 class PatientCaptureResult(TypedDict):
+    paciente_id: int
     name: str
-    birth_date: Optional[str]
+    age: Optional[str]
     sex: Optional[str]
-    gender: Optional[str]
 
 
 class ConditionResult(TypedDict):
     paciente_id: int
     paciente_initials: str
-    birth_date: Optional[str]
+    age: Optional[str]
     sex: Optional[str]
     condition_id: int
     cid_code: Optional[str]
@@ -96,7 +96,7 @@ class SOAPCondition(TypedDict, total=False):
 class PacienteSemConsultaResult(TypedDict):
     paciente_id: int
     paciente_initials: str
-    birth_date: Optional[str]
+    age: Optional[str]
     sex: Optional[str]
     ultima_consulta: Optional[str]
     dias_sem_consulta: Optional[int]
@@ -105,7 +105,7 @@ class PacienteSemConsultaResult(TypedDict):
 class GestanteResult(TypedDict):
     gestacao_id: int
     paciente_id: int
-    nome_paciente: str
+    paciente_initials: str
     dpp: Optional[str]
     idade_gestacional_semanas: Optional[int]
     idade_gestacional_dias: Optional[int]

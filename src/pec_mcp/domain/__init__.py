@@ -1,0 +1,3 @@
+"""
+Domínio central da aplicação.
+"""

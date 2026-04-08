@@ -4,12 +4,12 @@ Tools para contar e listar pacientes sem consulta recente.
 
 from __future__ import annotations
 
-import re
 from typing import List, Literal, Optional, Tuple
 
 from mcp.server.fastmcp import Context
 
 from ..db import query_all, query_one
+from ..domain.patient import compute_age_display, to_initials
 from ..models import CountResult, PacienteSemConsultaResult
 from . import get_db_conn, to_iso_date
 from .filters import build_patient_filters
@@ -28,19 +28,6 @@ _DIABETES_CID = ["E10%", "E11%", "E12%", "E13%", "E14%"]
 _DIABETES_CIAP = ["T89", "T90"]
 
 _CBO_MED_ENF = "(cb.co_cbo_2002 LIKE '225%%' OR cb.co_cbo_2002 LIKE '2235%%')"
-
-
-def _to_initials(full_name: Optional[str]) -> str:
-    """
-    Converte nome completo em iniciais (ex.: "Joao de Carvalho Lima" -> "JCL").
-    """
-
-    if not full_name:
-        return "N/A"
-    parts = re.split(r"\s+", str(full_name).strip())
-    skip = {"de", "da", "do", "das", "dos"}
-    initials = [p[0].upper() for p in parts if p and p.lower() not in skip]
-    return "".join(initials) if initials else "N/A"
 
 
 def _normalize_tipo(tipo: SemConsultaTipo) -> str:
@@ -243,16 +230,14 @@ def listar_pacientes_sem_consulta(
 
     results: List[PacienteSemConsultaResult] = []
     for row in rows:
-        initials = _to_initials(row.get("nome_paciente"))
-        birth_date = to_iso_date(row.get("data_nascimento"))
         sexo_val = str(row.get("sexo")) if row.get("sexo") is not None else None
         ultima = to_iso_date(row.get("ultima_consulta"))
         dias_val = row.get("dias_sem_consulta")
         results.append(
             PacienteSemConsultaResult(
                 paciente_id=int(row["paciente_id"]),
-                paciente_initials=initials,
-                birth_date=birth_date,
+                paciente_initials=to_initials(row.get("nome_paciente")),
+                age=compute_age_display(row.get("data_nascimento")),
                 sex=sexo_val,
                 ultima_consulta=ultima,
                 dias_sem_consulta=int(dias_val) if dias_val is not None else None,

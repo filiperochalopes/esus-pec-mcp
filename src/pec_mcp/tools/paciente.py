@@ -4,39 +4,27 @@ Tool minimalista para capturar dados de pacientes de forma anonimizada.
 
 from __future__ import annotations
 
-import re
 from typing import List, Optional
 
 from mcp.server.fastmcp import Context
 
 from ..db import query_all
+from ..domain.patient import compute_age_display, to_initials
 from ..models import PatientCaptureResult
-from . import get_db_conn, to_iso_date
+from . import get_db_conn
 from .filters import build_patient_filters
 
 _SQL_BASE = """
 SELECT
-    c.no_cidadao    AS nome_paciente,
-    c.dt_nascimento AS data_nascimento,
-    c.no_sexo       AS sexo
+    c.co_seq_cidadao AS paciente_id,
+    c.no_cidadao     AS nome_paciente,
+    c.dt_nascimento  AS data_nascimento,
+    c.no_sexo        AS sexo
 FROM tb_cidadao c
 {where_clause}
 ORDER BY c.co_seq_cidadao
 LIMIT %s;
 """
-
-
-def _to_initials(full_name: Optional[str]) -> str:
-    """
-    Converte nome completo em iniciais (ex.: "Joao de Carvalho Lima" -> "JCL").
-    """
-
-    if not full_name:
-        return "N/A"
-    parts = re.split(r"\s+", str(full_name).strip())
-    skip = {"de", "da", "do", "das", "dos"}
-    initials = [p[0].upper() for p in parts if p and p.lower() not in skip]
-    return "".join(initials) if initials else "N/A"
 
 
 def capturar_paciente(
@@ -81,15 +69,13 @@ def capturar_paciente(
 
     results: List[PatientCaptureResult] = []
     for row in rows:
-        initials = _to_initials(row.get("nome_paciente"))
-        birth_date = to_iso_date(row.get("data_nascimento"))
         sexo_val = str(row.get("sexo")) if row.get("sexo") is not None else None
         results.append(
             PatientCaptureResult(
-                name=initials,
-                birth_date=birth_date,
+                paciente_id=int(row["paciente_id"]),
+                name=to_initials(row.get("nome_paciente")),
+                age=compute_age_display(row.get("data_nascimento")),
                 sex=sexo_val,
-                gender=sexo_val,  # Fallback: usar sexo enquanto não houver coluna dedicada de gênero.
             )
         )
     return results

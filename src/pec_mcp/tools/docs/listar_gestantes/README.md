@@ -23,4 +23,5 @@
   - Recorte de idade gestacional: 1 a 42 semanas, baseado em DUM.
   - DPP calculada por eco quando disponivel; fallback para `DUM + 280 dias`.
   - Idade gestacional formatada como `<semanas>s<dias>d` (ex.: `12s3d`).
+  - Nao retorna nome completo nem outros identificadores diretos da paciente.
   - Limite maximo de 200 registros por chamada.
