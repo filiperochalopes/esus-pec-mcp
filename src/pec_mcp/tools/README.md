@@ -14,18 +14,12 @@
     - usados para filtrar pacientes que têm atendimento na unidade escolhida
   - `tb_cidadao_vinculacao_equipe`:
     - `co_cidadao`, `nu_cnes` (CNES da equipe/unidade vinculada); cobre pacientes sem atendimento
-  - `tb_equipe`:
-    - `co_seq_equipe`, `nu_ine` (para filtrar por equipe)
-  - `tb_fat_cad_individual` + `tb_fat_cidadao_pec`:
-    - `nu_micro_area` (microárea), `co_dim_tempo` (mais recente), `st_ficha_inativa` (ativo/inativo)
 - **Filtros suportados**:
   - `paciente_id` (co_seq_cidadao)
   - `name_starts_with` (prefixo de nome, ILIKE)
   - `sex` (ex.: `MASCULINO`/`FEMININO`/`INDETERMINADO` ou aliases `M`/`F`/`I`)
   - `age_min` / `age_max` (anos, via `DATE_PART('year', AGE(...))`)
   - `unidade_saude_id` (co_seq_unidade_saude; opcional; usa atendimentos e vínculos por CNES)
-  - `equipe_id` (co_seq_equipe; opcional; via `tb_cidadao_vinculacao_equipe` + `tb_equipe`)
-  - `micro_area` (nu_micro_area; opcional; usa cadastro individual mais recente e ativo)
   - `limite` (1–200; default 50)
 - **Guardrails**:
   - Exige pelo menos um critério (id, prefixo, sexo ou idade) antes de consultar.
@@ -33,9 +27,9 @@
   - Retorno traz apenas iniciais, nunca nome completo ou documentos.
   - Limite máximo de 200 linhas para evitar vazamento massivo.
 
-# Tool: listar_condicoes_pacientes
+# Tool: listar_condicoes
 
-- **Descricao**: lista condicoes de saude (CID/CIAP) registradas em pacientes usando filtros minimos para evitar varreduras. Nao use para descobrir codigos; use `obter_codigos_condicao_saude`.
+- **Descrição**: lista condições de saúde (CID/CIAP) de pacientes usando filtros mínimos para evitar varreduras.
 - **Consulta**: somente leitura.
 - **Tabelas/colunas relevantes**:
   - `tb_problema`:
@@ -52,16 +46,12 @@
   - `tb_unidade_saude` / `tb_atend` / `tb_cidadao_vinculacao_equipe`:
     - `tb_atend.co_unidade_saude` aponta para `tb_unidade_saude.co_seq_unidade_saude` (CNES em `nu_cnes`)
     - filtro opcional `unidade_saude_id` considera atendimentos ou vínculos por CNES (tabela de vinculação)
-  - `tb_equipe`: `co_seq_equipe`, `nu_ine` (filtro por equipe)
-  - `tb_fat_cad_individual` + `tb_fat_cidadao_pec`: `nu_micro_area`, `co_dim_tempo`, `st_ficha_inativa` (microárea atual)
 - **Filtros suportados** (ao menos um é obrigatório):
   - `paciente_id` (co_seq_cidadao)
   - `name_starts_with` (prefixo de nome, ILIKE)
   - `sex` (MASCULINO/FEMININO/INDETERMINADO ou aliases M/F/I)
   - `age_min` / `age_max` (anos, via `DATE_PART('year', AGE(...))`)
   - `unidade_saude_id` (co_seq_unidade_saude; opcional; usa atendimentos e vínculos por CNES)
-  - `equipe_id` (co_seq_equipe; opcional; via vinculação por INE)
-  - `micro_area` (nu_micro_area; opcional; usa cadastro individual mais recente e ativo)
   - `cid_code` (código/prefixo CID-10, ILIKE) ou `cid_codes` (lista; combinados com `cid_logic`, default OR)
   - `cid_logic` (OR para múltiplos códigos; AND não é suportado na listagem)
   - `ciap_code` (código/prefixo CIAP, ILIKE)
@@ -77,9 +67,9 @@
 
 - **Descrição**: retorna apenas a contagem (`count`) de pacientes distintos aplicando filtros de paciente e/ou condição.
 - **Consulta**: somente leitura; não retorna payload de pacientes.
-- **Tabelas/colunas relevantes**: mesmas de `listar_condicoes_pacientes`, mas usa `COUNT(DISTINCT c.co_seq_cidadao)`; só faz JOIN em `tb_problema`/`tb_cid10`/`tb_ciap` se filtros de condição forem informados; `unidade_saude_id` usa `tb_atend` (co_unidade_saude) ou `tb_cidadao_vinculacao_equipe` (nu_cnes) cruzados com `tb_unidade_saude`; `equipe_id` usa `tb_equipe` + `tb_cidadao_vinculacao_equipe`; `micro_area` usa `tb_fat_cad_individual`.
+- **Tabelas/colunas relevantes**: mesmas de `listar_condicoes`, mas usa `COUNT(DISTINCT c.co_seq_cidadao)`; só faz JOIN em `tb_problema`/`tb_cid10`/`tb_ciap` se filtros de condição forem informados; `unidade_saude_id` usa `tb_atend` (co_unidade_saude) ou `tb_cidadao_vinculacao_equipe` (nu_cnes) cruzados com `tb_unidade_saude`.
 - **Filtros suportados** (ao menos um é obrigatório):
-  - Paciente: `paciente_id`, `name_starts_with`, `sex`, `age_min`, `age_max`, `unidade_saude_id`, `equipe_id`, `micro_area`
+  - Paciente: `paciente_id`, `name_starts_with`, `sex`, `age_min`, `age_max`, `unidade_saude_id`
   - Condição: `cid_code`, `cid_codes` (lista), `cid_logic` (OR/AND), `ciap_code`, `condition_text` (ILIKE em descrições/observações)
 - **Guardrails**:
   - Exige pelo menos um filtro para evitar contagens amplas sem contexto.
@@ -88,81 +78,15 @@
 
 # Tool: listar_unidades_saude
 
-- **Descrição**: lista unidades básicas de saúde (UBS) para uso em filtros.
+- **Descrição**: lista todas as unidades de saúde cadastradas (uso típico: popular select de filtro).
 - **Consulta**: somente leitura.
 - **Tabelas/colunas relevantes**:
   - `tb_unidade_saude`:
     - `co_seq_unidade_saude` (PK usada nos filtros), `nu_cnes` (CNES), `no_unidade_saude`
     - `co_localidade_endereco`, `st_ativo`
-- **Filtros suportados**: nenhum (retorna apenas `CENTRO DE SAUDE/UNIDADE BASICA`).
+- **Filtros suportados**: nenhum (retorna todas as unidades; no dump atual são 21, com 12 usadas em atendimentos e 10 com vínculos por CNES).
 - **Guardrails**:
   - Apenas leitura; ordena pelo nome da unidade.
-
-# Tool: contar_pacientes_sem_consulta
-
-- **Descrição**: retorna apenas a contagem (`count`) de pacientes sem consulta recente (médicos/enfermeiros) por perfil clínico: `hipertensao`, `diabetes` ou `gestante`.
-- **Consulta**: somente leitura; não retorna lista de pacientes.
-- **Tabelas/colunas relevantes**:
-  - `tb_atend_prof` + `tb_atend`: base para última consulta (`dt_inicio`) com filtro de CBO médico/enfermeiro.
-  - `tb_lotacao` / `tb_cbo`: filtro por CBO (`co_cbo_2002` prefixos `225%` e `2235%`).
-  - `tb_problema` + `tb_cid10` + `tb_ciap`: identifica hipertensão/diabetes via CID-10/CIAP.
-  - `tb_pre_natal`: identifica gestantes ativas (`dt_desfecho IS NULL`).
-  - `tb_cidadao`: vínculo do paciente (`co_seq_cidadao`) e filtros opcionais de unidade.
-  - `tb_cidadao_vinculacao_equipe` + `tb_unidade_saude`: filtro opcional de unidade por CNES.
-- **Filtros suportados**:
-  - `tipo` (obrigatório): `hipertensao`, `diabetes` ou `gestante`.
-  - `dias_sem_consulta` (opcional; default 180 para hipertensão/diabetes e 60 para gestantes).
-  - `unidade_saude_id` (opcional; filtra pacientes vinculados e considera consultas apenas na unidade).
-  - `equipe_id` (opcional; filtra pacientes pela equipe vinculada).
-  - `micro_area` (opcional; microárea atual do cadastro individual).
-- **Gestantes**:
-  - Aplica o mesmo recorte de idade gestacional do `listar_gestantes` (1 a 42 semanas), baseado em `dt_ultima_menstruacao`.
-- **Guardrails**:
-  - Retorna somente contagem agregada.
-  - `unidade_saude_id` valida inteiro positivo quando informado.
-  - Sempre filtra consultas por CBO médico (`225%`) e enfermeiro (`2235%`).
-
-# Tool: listar_pacientes_sem_consulta
-
-- **Descrição**: lista pacientes sem consulta recente (médicos/enfermeiros) por perfil clínico, com paginação.
-- **Consulta**: somente leitura; retorna apenas iniciais do paciente.
-- **Tabelas/colunas relevantes**: mesmas de `contar_pacientes_sem_consulta`.
-- **Filtros suportados**:
-  - `tipo` (obrigatório): `hipertensao`, `diabetes` ou `gestante`.
-  - `dias_sem_consulta` (opcional; default 180/60).
-  - `unidade_saude_id` (opcional).
-  - `equipe_id` (opcional).
-  - `micro_area` (opcional).
-  - `limite` (1–200; default 50) e `offset` (>= 0).
-- **Gestantes**:
-  - Mesmo recorte de idade gestacional do `listar_gestantes` (1 a 42 semanas).
-- **Guardrails**:
-  - Retorna apenas iniciais, data de nascimento, sexo, última consulta e dias desde a última consulta.
-  - Limite máximo de 200 registros por chamada.
-  - Ordena por `ultima_consulta` (NULLS FIRST) para priorizar quem não tem consulta registrada.
-
-# Tool: listar_gestantes
-
-- **Descrição**: lista gestações ativas em acompanhamento pré-natal, com idade gestacional calculada.
-- **Consulta**: somente leitura.
-- **Tabelas/colunas relevantes**:
-  - `tb_pre_natal`: `co_seq_pre_natal`, `co_prontuario`, `dt_ultima_menstruacao`, `dt_desfecho`, `tp_gravidez`, `st_alto_risco`
-  - `tb_prontuario`: `co_seq_prontuario`, `co_cidadao`
-  - `tb_cidadao`: `co_seq_cidadao`, `no_cidadao`
-  - `tb_exame_prenatal`: `co_exame_requisitado`, `dt_provavel_parto_eco` (DPP via eco)
-- **Filtros suportados**:
-  - `trimestre` (opcional: `primeiro`, `segundo`, `terceiro`)
-  - `unidade_saude_id` (opcional)
-  - `equipe_id` (opcional)
-  - `micro_area` (opcional)
-  - `limite` (1–200; default 50)
-- **Guardrails**:
-  - Considera apenas gestantes ativas (`dt_desfecho IS NULL`).
-  - Recorte de idade gestacional: 1 a 42 semanas, baseado em `dt_ultima_menstruacao`.
-  - DPP calculada por eco quando disponível, senão `DUM + 280 dias`.
-  - Idade gestacional formatada como `<semanas>s<dias>d` (ex.: `12s3d`).
-  - Não retorna nome completo nem outros identificadores diretos da paciente.
-  - Limite máximo de 200 linhas para evitar vazamento massivo.
 
 # Tool: listar_ultimos_atendimentos_soap
 
@@ -182,19 +106,67 @@
   - Restringe resultados a profissionais médicos (`225%`) ou enfermeiros (`2235%`) via `co_cbo_2002`.
   - Ordena do mais recente para o mais antigo pelo `dt_inicio`; quando `limite` não é informado, retorna todos os registros encontrados.
 
-# Tool: obter_codigos_condicao_saude
+# Tool: listar_registros_antropometria
 
-- **Descricao**: retorna codigos CID-10/CIAP associados a uma condicao de saude para uso em filtros de outras tools.
-- **Uso recomendado**: perguntas do tipo "quais CID/CIAP de X?" e antes de filtrar por condicao.
+- **Descrição**: histórico de peso, altura e IMC calculado de um paciente, consolidando dados de atendimentos clínicos (PEC) e visitas domiciliares (ACS) via UNION ALL.
+- **Consulta**: somente leitura.
+- **Fontes de dados**:
+  - **PEC**: `tl_medicao` → `tb_atend_prof` → `tb_atend` → `tb_prontuario` → `tb_cidadao` (profissional via `tb_lotacao` → `tb_prof` + `tb_cbo`)
+  - **Visita domiciliar**: `tb_fat_visita_domiciliar` → `tb_fat_cidadao_pec` (profissional via `tb_dim_profissional` + `tb_dim_cbo`)
+- **Filtros suportados**:
+  - `paciente_id` (obrigatório, co_seq_cidadao)
+  - `data_inicio` / `data_fim` (YYYY-MM-DD ou timestamp)
+  - `limite` (1–200; default 50)
+- **Retorno**: `paciente_id`, `peso_kg`, `altura_cm`, `imc` (calculado: peso/altura²), `data_medicao`, `profissional_id`, `profissional_nome`, `tipo_profissional` (médico/enfermeiro/ACS), `origem` (pec/visita_domiciliar)
+- **Guardrails**: IMC é sempre recalculado quando peso e altura estão presentes; limite 200 registros.
+
+# Tool: listar_registros_pa
+
+- **Descrição**: histórico de pressão arterial (PAS/PAD) de um paciente, consolidando PEC e visitas domiciliares.
+- **Consulta**: somente leitura.
+- **Fontes de dados**: mesmas de `listar_registros_antropometria`.
+- **Filtros suportados**:
+  - `paciente_id` (obrigatório)
+  - `data_inicio` / `data_fim`
+  - `limite` (1–200; default 50)
+- **Retorno**: `paciente_id`, `pas` (sistólica), `pad` (diastólica), `pressao_raw` ("130/80"), `data_medicao`, `profissional_id`, `profissional_nome`, `tipo_profissional`, `origem`
+- **Guardrails**: PA é decomposta do formato "PAS/PAD" via SPLIT_PART; limite 200 registros.
+
+# Tool: listar_registros_hgt
+
+- **Descrição**: histórico de glicemia capilar (HGT) em mg/dL com momento da aferição em texto legível.
+- **Consulta**: somente leitura.
+- **Fontes de dados**: mesmas de `listar_registros_antropometria`, com join adicional em `tb_dim_tipo_glicemia` para a fonte visita.
+- **Filtros suportados**:
+  - `paciente_id` (obrigatório)
+  - `data_inicio` / `data_fim`
+  - `momento` (opcional: "jejum", "pos_prandial", "pre_prandial")
+  - `limite` (1–200; default 50)
+- **Retorno**: `paciente_id`, `valor_mg_dl`, `momento_afericao` (texto: Jejum/Pós-prandial/Pré-prandial), `data_medicao`, `profissional_id`, `profissional_nome`, `tipo_profissional`, `origem`
+- **Guardrails**: momento é mapeado para texto legível (nunca FK numérica); limite 200 registros.
+
+# Tool: listar_visitas_acs
+
+- **Descrição**: lista ou conta visitas domiciliares de Agentes Comunitários de Saúde (CBO 515105), com filtros cruzados de profissional, período, tipo de acompanhamento, motivo da visita e presença de aferições.
 - **Consulta**: somente leitura.
 - **Tabelas/colunas relevantes**:
-  - `tb_cid10`: `nu_cid10`, `no_cid10`, `no_cid10_filtro`
-  - `tb_ciap`: `co_ciap`, `ds_ciap`, `ds_ciap_filtro`
+  - `tb_fat_visita_domiciliar`: tabela fato desnormalizada com 32+ flags de condição/motivo
+  - `tb_dim_profissional`: nome do ACS (co_dim_profissional)
+  - `tb_dim_tempo`: data da visita (dt_registro)
+  - `tb_dim_cbo`: CBO do profissional (filtro fixo nu_cbo='515105')
+  - `tb_dim_turno`: turno (Manhã/Tarde/Noite)
+  - `tb_dim_desfecho_visita`: desfecho (Realizada/Recusada/Ausente)
+  - `tb_fat_cidadao_pec`: vínculo com paciente PEC (co_cidadao)
+  - Ver `docs/visita_domiciliar_flags.md` para a lista completa dos 23 flags de acompanhamento e 9 flags de motivo.
 - **Filtros suportados**:
-  - `condicao` (obrigatorio)
-  - `limite` (1-200; default 50)
-- **Guardrails**:
-  - Valida `condicao` (nao vazia; max 100 chars).
-  - Limite maximo de 200 resultados por sistema.
-  - Quando nao ha match, retorna `fallback_condition_text` para uso em `condition_text`.
-- **Documentacao detalhada**: `mcp-server/src/pec_mcp/tools/docs/obter_codigos_condicao_saude/README.md`
+  - `profissional_id` (co_dim_profissional) ou `nome_profissional` (ILIKE parcial)
+  - `data_inicio` / `data_fim` (YYYY-MM-DD) ou `ultimos_dias` (ex.: 60 = últimos 2 meses; max 730)
+  - `acompanhamento`: gestante, puerpera, crianca, hipertensao, diabetes, tuberculose, hanseniase, cancer, acamado, saude_mental, idoso, etc. (23 valores)
+  - `motivo`: cadastro, periodica, busca_ativa, acompanhamento, egresso_internacao, controle_ambiental, convite_atividade, orientacao_prevencao, outros
+  - `com_peso_altura`, `com_pa`, `com_glicemia` (bool): filtra visitas com aferição presente
+  - `unidade_saude_id` (co_dim_unidade_saude)
+  - `apenas_contagem` (bool): retorna só `{count}` em vez da lista
+  - `limite` (1–500; default 200)
+- **Retorno** (listagem): `visita_id`, `profissional`, `data_visita`, `paciente_id`, `paciente_nome` (iniciais), `turno`, `desfecho`, `motivo_visita` (lista), `acompanhamentos` (lista), `tem_peso_altura`, `tem_pa`, `tem_glicemia`
+- **Retorno** (contagem): `{count}`
+- **Guardrails**: nomes de pacientes anonimizados (iniciais); limite 500 registros; profissional fixado a ACS (CBO 515105).

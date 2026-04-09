@@ -16,16 +16,16 @@ except ImportError:  # pragma: no cover - fallback para ambientes que já suport
 
 
 class PatientCaptureResult(TypedDict):
-    paciente_id: int
     name: str
-    age: Optional[str]
+    birth_date: Optional[str]
     sex: Optional[str]
+    gender: Optional[str]
 
 
 class ConditionResult(TypedDict):
     paciente_id: int
     paciente_initials: str
-    age: Optional[str]
+    birth_date: Optional[str]
     sex: Optional[str]
     condition_id: int
     cid_code: Optional[str]
@@ -40,21 +40,6 @@ class ConditionResult(TypedDict):
 
 class CountResult(TypedDict):
     count: int
-
-
-class HealthConditionCode(TypedDict):
-    code: str
-    description: Optional[str]
-
-
-class HealthConditionCaptureResult(TypedDict):
-    condition: str
-    source: str
-    cid_codes: list[str]
-    ciap_codes: list[str]
-    cid: list["HealthConditionCode"]
-    ciap: list["HealthConditionCode"]
-    fallback_condition_text: Optional[str]
 
 
 class HealthUnitResult(TypedDict):
@@ -93,37 +78,70 @@ class SOAPCondition(TypedDict, total=False):
     situacao_id: Optional[str]
 
 
-class PacienteSemConsultaResult(TypedDict):
+class AntropometriaResult(TypedDict):
     paciente_id: int
-    paciente_initials: str
-    age: Optional[str]
-    sex: Optional[str]
-    ultima_consulta: Optional[str]
-    dias_sem_consulta: Optional[int]
+    peso_kg: Optional[float]
+    altura_cm: Optional[float]
+    imc: Optional[float]
+    data_medicao: Optional[str]
+    profissional_id: Optional[int]
+    profissional_nome: Optional[str]
+    tipo_profissional: Optional[str]  # "médico", "enfermeiro", "ACS", etc.
+    origem: str  # "pec" ou "visita_domiciliar"
 
 
-class GestanteResult(TypedDict):
-    gestacao_id: int
+class PAResult(TypedDict):
     paciente_id: int
-    paciente_initials: str
-    dpp: Optional[str]
-    idade_gestacional_semanas: Optional[int]
-    idade_gestacional_dias: Optional[int]
-    idade_gestacional_str: Optional[str]
-    tp_gravidez: Optional[str]
-    st_alto_risco: Optional[str]
-    situacao: Optional[str]
+    pas: Optional[int]
+    pad: Optional[int]
+    pressao_raw: Optional[str]
+    data_medicao: Optional[str]
+    profissional_id: Optional[int]
+    profissional_nome: Optional[str]
+    tipo_profissional: Optional[str]
+    origem: str
+
+
+class HGTResult(TypedDict):
+    paciente_id: int
+    valor_mg_dl: Optional[float]
+    momento_afericao: Optional[str]
+    data_medicao: Optional[str]
+    profissional_id: Optional[int]
+    profissional_nome: Optional[str]
+    tipo_profissional: Optional[str]
+    origem: str
+
+
+class VisitaACSResult(TypedDict):
+    visita_id: int
+    profissional: Optional[str]
+    data_visita: Optional[str]
+    paciente_id: Optional[int]
+    paciente_nome: Optional[str]
+    turno: Optional[str]
+    desfecho: Optional[str]
+    motivo_visita: Optional[list]
+    acompanhamentos: Optional[list]
+    tem_peso_altura: bool
+    tem_pa: bool
+    tem_glicemia: bool
+
+
+class VisitaACSCountResult(TypedDict):
+    count: int
 
 
 __all__ = [
     "PatientCaptureResult",
     "ConditionResult",
     "CountResult",
-    "HealthConditionCode",
-    "HealthConditionCaptureResult",
     "HealthUnitResult",
     "AtendimentoSOAPResult",
     "SOAPCondition",
-    "PacienteSemConsultaResult",
-    "GestanteResult",
+    "AntropometriaResult",
+    "PAResult",
+    "HGTResult",
+    "VisitaACSResult",
+    "VisitaACSCountResult",
 ]
