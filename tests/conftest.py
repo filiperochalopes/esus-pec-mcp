@@ -5,6 +5,7 @@ Fixtures compartilhadas para testes das tools MCP.
 from __future__ import annotations
 
 import sys
+import os
 from pathlib import Path
 
 import pytest
@@ -23,8 +24,11 @@ def _connect_or_skip():
     Tenta abrir conexão; se indisponível, pula os testes dependentes.
     """
 
+    dsn = os.getenv("PEC_TEST_DB_DSN", "").strip()
+    if not dsn:
+        pytest.skip("PEC_TEST_DB_DSN não definida para os testes de integração clínica.")
     try:
-        conn = get_connection()
+        conn = get_connection(dsn=dsn)
     except Exception as exc:  # pragma: no cover - depende do ambiente local
         pytest.skip(f"Banco indisponível para testes: {exc}")
     return conn

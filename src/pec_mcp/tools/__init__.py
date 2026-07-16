@@ -7,33 +7,35 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Optional
 
-from ..db import get_connection
-
 from mcp.server.fastmcp import Context
-
-_GLOBAL_CONN = None  # Fallback para versões do FastMCP sem lifecycle
 
 
 def get_db_conn(ctx: Context):
     """
     Obtém conexão de banco armazenada no estado do contexto.
 
-    Se o FastMCP da runtime não suportar lifecycle (@lifespan), fazemos
-    fallback para uma conexão global compartilhada para manter
-    compatibilidade.
+    A conexão deve ser injetada pelo contexto autenticado da instalação.
     """
 
-    global _GLOBAL_CONN
-
     conn: Optional[object] = None
+    # O SaaS usa um contexto mínimo com ``state`` para injetar a conexão.
     state = getattr(ctx, "state", None)
     if isinstance(state, dict):
         conn = state.get("db_conn")
 
+    # O servidor FastMCP standalone entrega o valor produzido pelo lifespan
+    # por meio do request_context.
     if conn is None:
-        if _GLOBAL_CONN is None or getattr(_GLOBAL_CONN, "closed", False):
-            _GLOBAL_CONN = get_connection()
-        conn = _GLOBAL_CONN
+        try:
+            request_context = ctx.request_context
+        except (AttributeError, ValueError):
+            request_context = None
+        lifespan_context = getattr(request_context, "lifespan_context", None)
+        if isinstance(lifespan_context, dict):
+            conn = lifespan_context.get("db_conn")
+
+    if conn is None:
+        raise RuntimeError("Conexão clínica ausente no contexto da tool.")
     return conn
 
 

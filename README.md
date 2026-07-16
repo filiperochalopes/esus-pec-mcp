@@ -1,6 +1,11 @@
 # PEC MCP Server
 
-Um servidor [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) construído com `FastMCP` para consulta segura e otimizada de dados clínicos no Prontuário Eletrônico do Cidadão (PEC).
+Servidor MCP e biblioteca de tools clínicas para consultas somente leitura no
+Prontuário Eletrônico do Cidadão (PEC). Pode ser executado de duas formas:
+
+- **Standalone:** processo MCP independente configurado por variáveis de ambiente.
+- **Integrado ao SaaS:** biblioteca Python cuja conexão é injetada pela instalação
+  autenticada, sem depender das variáveis `PEC_DB_*` do processo.
 
 Este servidor expõe ferramentas (tools) para LLMs interagirem com a base de dados do PEC (PostgreSQL) de forma somente leitura, permitindo consultas sobre pacientes, condições de saúde, atendimentos e indicadores.
 
@@ -31,7 +36,7 @@ cd mcp-server-pec
 # Crie um ambiente virtual e instale as dependências
 uv venv
 source .venv/bin/activate  # No Windows: .venv\Scripts\activate
-uv pip install mcp psycopg2-binary python-dotenv
+uv pip install -e .
 ```
 
 ### Usando pip
@@ -39,53 +44,63 @@ uv pip install mcp psycopg2-binary python-dotenv
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # No Windows: .venv\Scripts\activate
-pip install mcp psycopg2-binary python-dotenv
+pip install -e .
 ```
 
-## Configuração
+## Modo standalone
 
-O servidor é configurado via variáveis de ambiente. Você pode criar um arquivo `.env` na raiz do projeto ou exportar as variáveis diretamente.
-
-### Variáveis de Banco de Dados
-
-| Variável          | Padrão      | Descrição                                  |
-|-------------------|-------------|--------------------------------------------|
-| `PEC_DB_HOST`     | `localhost` | Host do banco de dados PostgreSQL          |
-| `PEC_DB_PORT`     | `5432`      | Porta do banco de dados                    |
-| `PEC_DB_NAME`     | `postgres`  | Nome do banco de dados (ex: `esus`)        |
-| `PEC_DB_USER`     | `postgres`  | Usuário do banco de dados                  |
-| `PEC_DB_PASSWORD` | `pass`      | Senha do usuário                           |
-
-### Variáveis do Servidor MCP
-
-| Variável        | Padrão      | Descrição                                     |
-|-----------------|-------------|-----------------------------------------------|
-| `MCP_HTTP_HOST` | `127.0.0.1` | Host para o servidor HTTP                     |
-| `MCP_HTTP_PORT` | `5174`      | Porta para o servidor HTTP                    |
-
-Exemplo de arquivo `.env`:
-
-```env
-PEC_DB_HOST=192.168.1.100
-PEC_DB_NAME=esus
-PEC_DB_USER=esus_leitura
-PEC_DB_PASSWORD=senha_segura
-```
-
-## Uso
-
-Para iniciar o servidor:
+Copie o exemplo e preencha uma conta PostgreSQL com permissão somente de leitura:
 
 ```bash
-# Se o diretório src estiver no PYTHONPATH
-python -m src.pec_mcp.server
-
-# Ou executando diretamente se estiver na raiz
-export PYTHONPATH=$PYTHONPATH:$(pwd)/src
-python src/pec_mcp/server.py
+cp .env.example .env
 ```
 
-O servidor iniciará em `http://127.0.0.1:5174` (ou conforme configurado) usando transporte SSE (Server-Sent Events) compatível com clientes MCP.
+As credenciais não possuem valores padrão. Configure uma DSN completa em
+`PEC_DB_DSN` **ou** as variáveis separadas abaixo:
+
+| Variável | Obrigatória | Padrão | Descrição |
+|---|---:|---|---|
+| `PEC_DB_DSN` | alternativa | — | DSN completa do PostgreSQL |
+| `PEC_DB_HOST` | sim* | — | Host do banco clínico |
+| `PEC_DB_PORT` | não | `5432` | Porta do PostgreSQL |
+| `PEC_DB_NAME` | sim* | — | Database do PEC |
+| `PEC_DB_USER` | sim* | — | Usuário somente leitura |
+| `PEC_DB_PASSWORD` | sim* | — | Senha do usuário |
+| `PEC_DB_SSLMODE` | não | — | Modo SSL, por exemplo `require` |
+| `MCP_TRANSPORT` | não | `streamable-http` | `streamable-http`, `sse` ou `stdio` |
+| `MCP_HTTP_HOST` | não | `127.0.0.1` | Endereço do servidor HTTP |
+| `MCP_HTTP_PORT` | não | `5174` | Porta do servidor HTTP |
+
+\* Obrigatória quando `PEC_DB_DSN` não for usada.
+
+Depois, inicie pelo comando instalado:
+
+```bash
+pec-mcp
+```
+
+Ou diretamente pelo módulo:
+
+```bash
+PYTHONPATH=src python -m pec_mcp.server
+```
+
+No transporte padrão, o endpoint MCP fica em `http://127.0.0.1:5174/mcp`.
+Para clientes que iniciam o processo via stdio, use `MCP_TRANSPORT=stdio`.
+
+## Modo integrado ao SaaS
+
+A aplicação injeta em cada chamada uma conexão criada com a configuração clínica
+da instalação autenticada. Nesse modo, o SaaS continua chamando
+`get_connection(dsn=cfg.as_dsn())` e entregando a conexão em `ctx.state`; portanto,
+as variáveis standalone não participam da seleção da instalação.
+
+O servidor standalone usa a mesma implementação das tools, mas entrega sua
+conexão pelo `lifespan_context` nativo do FastMCP.
+
+O entrypoint standalone registra o mesmo conjunto atualmente integrado ao SaaS:
+captura de paciente, condições, contagem, unidades, SOAP, antropometria, pressão
+arterial, HGT e visitas de ACS.
 
 ## Ferramentas Disponíveis
 
@@ -120,6 +135,9 @@ Busca códigos CID-10 ou CIAP correspondentes a um termo de busca. Útil para de
 ## Segurança
 
 - **Somente Leitura**: O servidor deve ser conectado a um usuário de banco com permissões estritas de `SELECT`.
+- **Transação protegida**: o standalone configura a sessão PostgreSQL como `readonly` e `autocommit`.
+- **Sem credenciais padrão**: o modo standalone falha ao iniciar se a configuração clínica estiver incompleta.
+- **Isolamento SaaS**: o modo integrado usa exclusivamente a DSN da instalação autenticada.
 - **Anonimização**: As ferramentas retornam apenas iniciais dos nomes e dados agregados onde possível.
 - **Limites**: Todas as consultas possuem limites (`LIMIT`) forçados para evitar exfiltração massiva de dados.
 

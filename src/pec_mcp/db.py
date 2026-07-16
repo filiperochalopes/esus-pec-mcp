@@ -12,10 +12,7 @@ from typing import Iterable, Optional, Sequence
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-from .config import get_db_dsn
-
-
-def get_connection(dsn: Optional[str] = None):
+def get_connection(dsn: str):
     """
     Abre conexão com o PostgreSQL usando RealDictCursor para devolver dicts.
 
@@ -23,7 +20,9 @@ def get_connection(dsn: Optional[str] = None):
     de conexão no lifespan do servidor MCP.
     """
 
-    return psycopg2.connect(dsn=dsn or get_db_dsn(), cursor_factory=RealDictCursor)
+    if not dsn or not dsn.strip():
+        raise ValueError("A DSN clínica da instalação é obrigatória.")
+    return psycopg2.connect(dsn=dsn, cursor_factory=RealDictCursor)
 
 
 def query_all(conn, sql: str, params: Optional[Sequence] = None) -> list[dict]:
