@@ -63,3 +63,17 @@ def test_standalone_registers_the_clinical_tools_without_opening_database():
     registered = {tool.name for tool in asyncio.run(server.list_tools())}
     expected = {tool.__name__ for tool in STANDALONE_TOOLS}
     assert registered == expected
+    assert "obter_codigos_condicao_saude" in registered
+
+
+def test_condition_code_tool_describes_aggregate_query_workflow():
+    server = create_server(
+        settings=ServerSettings(),
+        dsn="host=unused dbname=unused user=unused password=unused",
+    )
+    tools = {tool.name: tool for tool in asyncio.run(server.list_tools())}
+    description = tools["obter_codigos_condicao_saude"].description
+
+    assert "dados agregados" in description
+    assert "informe" in description
+    assert "codigos foram usados" in description

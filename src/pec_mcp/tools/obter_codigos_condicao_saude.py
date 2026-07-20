@@ -248,6 +248,10 @@ def obter_codigos_condicao_saude(
     Retorna codigos CID-10/CIAP associados a uma condicao informada.
 
     Use esta tool para responder perguntas do tipo "quais CID/CIAP de X?".
+    Antes de consultar dados agregados de uma condicao, use esta tool e aplique
+    os codigos retornados no filtro da consulta. Se nenhum codigo valido for
+    retornado, use os codigos CID-10 que voce conhece para a condicao e informe
+    explicitamente ao usuario quais codigos foram usados na busca.
     Presets sao aplicados para condicoes comuns; caso contrario, busca no
     banco por nomes/descricoes normalizadas. Quando nao houver match,
     retorna fallback_condition_text para usar como condition_text em filtros.

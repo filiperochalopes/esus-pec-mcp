@@ -18,6 +18,7 @@ from .tools.medicoes import (
     listar_registros_hgt,
     listar_registros_pa,
 )
+from .tools.obter_codigos_condicao_saude import obter_codigos_condicao_saude
 from .tools.paciente import capturar_paciente
 from .tools.unidades import listar_unidades_saude
 from .tools.visitas_acs import listar_visitas_acs
@@ -25,6 +26,7 @@ from .tools.visitas_acs import listar_visitas_acs
 
 STANDALONE_TOOLS = (
     capturar_paciente,
+    obter_codigos_condicao_saude,
     listar_condicoes_pacientes,
     contar_pacientes,
     listar_unidades_saude,
