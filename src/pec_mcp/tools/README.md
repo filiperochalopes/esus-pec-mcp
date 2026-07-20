@@ -104,6 +104,7 @@
   - `limite` (opcional; 1–1000; sem limite quando não informado)
 - **Guardrails**:
   - Restringe resultados a profissionais médicos (`225%`) ou enfermeiros (`2235%`) via `co_cbo_2002`.
+  - Exclui atendimentos profissionais cancelados com `COALESCE(tb_atend_prof.st_cancelado, 0) = 0`.
   - Ordena do mais recente para o mais antigo pelo `dt_inicio`; quando `limite` não é informado, retorna todos os registros encontrados.
 
 # Tool: listar_registros_antropometria
@@ -118,7 +119,7 @@
   - `data_inicio` / `data_fim` (YYYY-MM-DD ou timestamp)
   - `limite` (1–200; default 50)
 - **Retorno**: `paciente_id`, `peso_kg`, `altura_cm`, `imc` (calculado: peso/altura²), `data_medicao`, `profissional_id`, `profissional_nome`, `tipo_profissional` (médico/enfermeiro/ACS), `origem` (pec/visita_domiciliar)
-- **Guardrails**: IMC é sempre recalculado quando peso e altura estão presentes; limite 200 registros.
+- **Guardrails**: IMC é sempre recalculado quando peso e altura estão presentes; ignora atendimentos PEC cancelados; limite 200 registros.
 
 # Tool: listar_registros_pa
 
@@ -130,7 +131,7 @@
   - `data_inicio` / `data_fim`
   - `limite` (1–200; default 50)
 - **Retorno**: `paciente_id`, `pas` (sistólica), `pad` (diastólica), `pressao_raw` ("130/80"), `data_medicao`, `profissional_id`, `profissional_nome`, `tipo_profissional`, `origem`
-- **Guardrails**: PA é decomposta do formato "PAS/PAD" via SPLIT_PART; limite 200 registros.
+- **Guardrails**: PA é decomposta do formato "PAS/PAD" via SPLIT_PART; ignora atendimentos PEC cancelados; limite 200 registros.
 
 # Tool: listar_registros_hgt
 
@@ -143,7 +144,7 @@
   - `momento` (opcional: "jejum", "pos_prandial", "pre_prandial")
   - `limite` (1–200; default 50)
 - **Retorno**: `paciente_id`, `valor_mg_dl`, `momento_afericao` (texto: Jejum/Pós-prandial/Pré-prandial), `data_medicao`, `profissional_id`, `profissional_nome`, `tipo_profissional`, `origem`
-- **Guardrails**: momento é mapeado para texto legível (nunca FK numérica); limite 200 registros.
+- **Guardrails**: momento é mapeado para texto legível (nunca FK numérica); ignora atendimentos PEC cancelados; limite 200 registros.
 
 # Tool: listar_visitas_acs
 

@@ -22,8 +22,11 @@
 - Não inclua campos “por conveniência”. Todo campo exposto precisa ter justificativa funcional clara.
 
 ## Checklist obrigatório ao criar ou alterar tools
-- Validar schema real no banco antes de implementar ou alterar SQL.
-- Validar amostras reais de dados para confirmar nomes de colunas, tipos e formato dos valores.
+- Investigar primeiro o codebase de referência do PEC e registrar hipóteses concretas sobre schema e regras de negócio.
+- Modelos em nuvem podem consultar somente metadados de schema. Nunca podem executar consultas que retornem ou derivem valores clínicos reais.
+- Validar as hipóteses sobre dados reais exclusivamente com agente/modelo local em infraestrutura privada, usando conexão somente leitura e o protocolo de `docs/VALIDACAO_LOCAL_TOOLS.md`.
+- Incorporar somente o relatório local sanitizado, sem linhas, valores clínicos, identificadores ou textos copiados do banco.
+- Se a validação local ainda não tiver ocorrido, documentar a regra como não confirmada contra dados reais.
 - Revisar se a SQL seleciona alguma coluna sensível sem necessidade. Se selecionar, remover.
 - Revisar `TypedDict` e qualquer serialização para garantir que não exista campo de PII.
 - Atualizar o `README.md` da tool com guardrails e campos retornados.
@@ -36,6 +39,7 @@
 - Evite joins em tabelas ou colunas de identificação direta quando não forem necessários para o caso de uso.
 - Limite paginação e quantidade de registros por padrão para reduzir risco de vazamento massivo.
 - Preserve o caráter somente leitura: sem `INSERT`, `UPDATE`, `DELETE`, `UPSERT`, `ALTER`, `CREATE`, `DROP` ou qualquer mutação.
+- Ignore registros de `tb_atend_prof` com `st_cancelado = 1` em tools que representam atendimentos clínicos concluídos ou válidos.
 
 ## Regras de testes
 - Toda tool que retorna dados de paciente deve ter teste verificando que o payload não contém `nome_paciente`, `no_cidadao` ou equivalente.

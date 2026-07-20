@@ -245,6 +245,7 @@ def _consulta_pa_maior_140_90(conn, limite: int = 50) -> List[PessoalFiltroResul
         JOIN tb_atend a ON a.co_seq_atend = ap.co_atend
         JOIN tb_prontuario pr ON pr.co_seq_prontuario = a.co_prontuario
         WHERE m.nu_medicao_pressao_arterial IS NOT NULL
+          AND COALESCE(ap.st_cancelado, 0) = 0
     )
     SELECT * FROM pa
     WHERE rn = 1 AND (

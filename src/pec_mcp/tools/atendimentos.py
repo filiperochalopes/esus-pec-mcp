@@ -59,6 +59,7 @@ LEFT JOIN LATERAL (
     WHERE pe2.co_atend_prof = ap.co_seq_atend_prof
 ) cond ON TRUE
 WHERE pr.co_cidadao = %s
+  AND COALESCE(ap.st_cancelado, 0) = 0
   AND (
         cb.co_cbo_2002 LIKE '225%%'   -- médicos
      OR cb.co_cbo_2002 LIKE '2235%%'  -- enfermeiros
@@ -73,6 +74,9 @@ def listar_ultimos_atendimentos_soap(
 ) -> List[AtendimentoSOAPResult]:
     """
     Recupera últimos atendimentos SOAP do paciente (médicos e enfermeiros).
+
+    Atendimentos profissionais cancelados são ignorados porque não representam
+    atendimentos clínicos concluídos ou válidos.
     """
 
     if paciente_id is None:

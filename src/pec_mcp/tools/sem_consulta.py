@@ -91,7 +91,7 @@ def _build_sem_consulta_sql(
 ) -> Tuple[str, List]:
     base_sql, base_params = _build_base_sql(tipo)
 
-    ult_where = _CBO_MED_ENF
+    ult_where = f"{_CBO_MED_ENF} AND COALESCE(ap.st_cancelado, 0) = 0"
     ult_params: List = []
     unit_id = None
     if unidade_saude_id is not None:

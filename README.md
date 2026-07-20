@@ -126,7 +126,7 @@ Conta pacientes sem consulta recente para perfis específicos: `hipertensao`, `d
 Lista (paginada e anonimizada) os pacientes sem consulta recente encontrados pela ferramenta de contagem.
 
 ### `listar_ultimos_atendimentos_soap`
-Recupera o histórico de atendimentos (SOAP) de um paciente específico.
+Recupera o histórico de atendimentos (SOAP) válidos e não cancelados de um paciente específico. Não inclui o módulo estruturado de prescrições, portanto o SOAP não deve ser usado para afirmar ausência, dose vigente ou recomendações da prescrição.
 - **Filtros**: `paciente_id` (obrigatório).
 
 ### `obter_codigos_condicao_saude`

@@ -65,6 +65,7 @@ def _classify_professional(cbo_code: Optional[str], cbo_name: Optional[str]) -> 
 _FROM_PEC = """
     FROM tl_medicao m
     JOIN tb_atend_prof ap  ON ap.co_seq_atend_prof = m.co_atend_prof
+                           AND COALESCE(ap.st_cancelado, 0) = 0
     JOIN tb_atend a        ON a.co_seq_atend       = ap.co_atend
     JOIN tb_prontuario pr  ON pr.co_seq_prontuario = a.co_prontuario
     JOIN tb_cidadao c      ON c.co_seq_cidadao     = pr.co_cidadao
