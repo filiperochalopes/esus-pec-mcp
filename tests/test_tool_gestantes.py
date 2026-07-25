@@ -33,6 +33,9 @@ def test_listar_gestantes_com_filtros_usa_alias_g(monkeypatch):
     assert "pr2.co_cidadao = c.co_seq_cidadao" not in sql
     assert "ve.co_cidadao = c.co_seq_cidadao" not in sql
     assert "fp.co_cidadao = c.co_seq_cidadao" not in sql
-    assert "no_cidadao" not in sql
-    assert "nome_paciente" not in sql
+    # Não afirmamos ausência de `no_cidadao`/`nome_paciente` no SQL: a CTE seleciona
+    # o nome de propósito, como insumo de to_initials(). Proibi-los aqui contradiz
+    # o desenho de anonimização — a garantia correta está em
+    # test_projected_columns.py (colunas proibidas / repasse cru) e em
+    # test_no_pii_in_tool_outputs.py (o nome não sai da tool).
     assert captured["params"] == [7, 294, 3, 3, 4, "01", 50]

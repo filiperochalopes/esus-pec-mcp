@@ -16,16 +16,16 @@ except ImportError:  # pragma: no cover - fallback para ambientes que já suport
 
 
 class PatientCaptureResult(TypedDict):
-    name: str
-    birth_date: Optional[str]
+    paciente_id: int
+    name: str  # iniciais (ver domain.patient.to_initials)
+    age: Optional[str]  # idade textual (ver domain.patient.compute_age_display)
     sex: Optional[str]
-    gender: Optional[str]
 
 
 class ConditionResult(TypedDict):
     paciente_id: int
     paciente_initials: str
-    birth_date: Optional[str]
+    age: Optional[str]  # idade textual; a data de nascimento nunca é exposta
     sex: Optional[str]
     condition_id: int
     cid_code: Optional[str]
@@ -40,6 +40,23 @@ class ConditionResult(TypedDict):
 
 class CountResult(TypedDict):
     count: int
+
+
+# `tools/gestantes.py` não está em STANDALONE_TOOLS, mas tem teste unitário
+# próprio (tests/test_tool_gestantes.py) que só coletava com este TypedDict
+# declarado. A tool já anonimiza corretamente (to_initials + sem data de
+# nascimento na saída).
+class GestanteResult(TypedDict):
+    gestacao_id: int
+    paciente_id: int
+    paciente_initials: str
+    dpp: Optional[str]
+    idade_gestacional_semanas: Optional[int]
+    idade_gestacional_dias: Optional[int]
+    idade_gestacional_str: Optional[str]
+    tp_gravidez: Optional[str]
+    st_alto_risco: Optional[str]
+    situacao: Optional[str]
 
 
 class HealthConditionCode(TypedDict):
@@ -151,6 +168,7 @@ __all__ = [
     "PatientCaptureResult",
     "ConditionResult",
     "CountResult",
+    "GestanteResult",
     "HealthConditionCode",
     "HealthConditionCaptureResult",
     "HealthUnitResult",

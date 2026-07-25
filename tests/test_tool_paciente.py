@@ -22,7 +22,8 @@ def test_capturar_paciente_por_id(ctx):
     assert isinstance(result, list)
     assert result, "Nenhum paciente retornado por ID"
     row = result[0]
-    assert set(row.keys()) == {"name", "birth_date", "sex", "gender"}
+    # A tool devolve idade textual (`age`), nunca a data de nascimento.
+    assert set(row.keys()) == {"paciente_id", "name", "age", "sex"}
     assert row["name"]
     assert row["name"].upper() == row["name"]
 

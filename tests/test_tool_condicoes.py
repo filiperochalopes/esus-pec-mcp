@@ -34,10 +34,11 @@ def test_listar_condicoes_por_paciente(ctx):
     assert row["paciente_id"] == paciente_id
     assert row["paciente_initials"]
     assert row["paciente_initials"].upper() == row["paciente_initials"]
+    # A tool devolve idade textual (`age`), nunca a data de nascimento.
     assert set(row.keys()) == {
         "paciente_id",
         "paciente_initials",
-        "birth_date",
+        "age",
         "sex",
         "condition_id",
         "cid_code",
