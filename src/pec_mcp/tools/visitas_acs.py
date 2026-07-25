@@ -42,6 +42,7 @@ from typing import List, Optional, Union
 from mcp.server.fastmcp import Context
 
 from ..db import query_all, query_one
+from ..domain.patient import to_initials
 from ..models import VisitaACSResult, VisitaACSCountResult
 from . import get_db_conn
 
@@ -267,15 +268,11 @@ def listar_visitas_acs(
 
     results: List[VisitaACSResult] = []
     for row in rows:
-        # Anonimiza nome do paciente usando iniciais (mesmo padrão do projeto)
+        # Anonimiza o nome do paciente com a única implementação de iniciais do
+        # projeto (domain/patient.py). A versão inline que existia aqui não
+        # ignorava a conjunção "e", divergindo de to_initials().
         nome_raw = row.get("paciente_nome")
-        iniciais = None
-        if nome_raw:
-            parts = str(nome_raw).split()
-            skip = {"de", "da", "do", "das", "dos"}
-            iniciais = "".join(
-                p[0].upper() for p in parts if p and p.lower() not in skip
-            ) or None
+        iniciais = to_initials(nome_raw) if nome_raw else None
 
         data_str = None
         dt_val = row.get("data_visita")
