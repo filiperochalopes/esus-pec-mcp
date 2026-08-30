@@ -18,8 +18,11 @@ from .tools.medicoes import (
     listar_registros_hgt,
     listar_registros_pa,
 )
+from .tools.exames import listar_resultados_hba1c
+from .tools.gestantes import listar_gestantes
 from .tools.obter_codigos_condicao_saude import obter_codigos_condicao_saude
 from .tools.paciente import capturar_paciente
+from .tools.prescricoes import listar_prescricoes_medicamentos
 from .tools.unidades import listar_unidades_saude
 from .tools.visitas_acs import listar_visitas_acs
 
@@ -34,7 +37,10 @@ STANDALONE_TOOLS = (
     listar_registros_antropometria,
     listar_registros_pa,
     listar_registros_hgt,
+    listar_resultados_hba1c,
+    listar_prescricoes_medicamentos,
     listar_visitas_acs,
+    listar_gestantes,
 )
 
 

@@ -129,6 +129,17 @@ Lista (paginada e anonimizada) os pacientes sem consulta recente encontrados pel
 Recupera o histórico de atendimentos (SOAP) válidos e não cancelados de um paciente específico. Não inclui o módulo estruturado de prescrições, portanto o SOAP não deve ser usado para afirmar ausência, dose vigente ou recomendações da prescrição.
 - **Filtros**: `paciente_id` (obrigatório).
 
+### `listar_prescricoes_medicamentos`
+Lista o histórico estruturado de prescrições, incluindo doses, frequência,
+posologia, vigência, uso contínuo, renovação e interrupção. Abrange prontuários
+agrupados e exclui atendimentos cancelados.
+- **Filtros**: `paciente_id`, `estado`, `medicamento`, `limite`.
+
+### `listar_resultados_hba1c`
+Lista resultados históricos de hemoglobina glicada para correlações temporais
+com HGT e mudanças documentadas de prescrição.
+- **Filtros**: `paciente_id`, `data_inicio`, `data_fim`, `limite`.
+
 ### `obter_codigos_condicao_saude`
 Busca códigos CID-10 ou CIAP correspondentes a um termo de busca. Útil para descobrir códigos antes de usar filtros de condição.
 

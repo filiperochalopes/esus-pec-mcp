@@ -171,3 +171,17 @@
 - **Retorno** (listagem): `visita_id`, `profissional`, `data_visita`, `paciente_id`, `paciente_nome` (iniciais), `turno`, `desfecho`, `motivo_visita` (lista), `acompanhamentos` (lista), `tem_peso_altura`, `tem_pa`, `tem_glicemia`
 - **Retorno** (contagem): `{count}`
 - **Guardrails**: nomes de pacientes anonimizados (iniciais); limite 500 registros; profissional fixado a ACS (CBO 515105).
+
+# Tool: listar_resultados_hba1c
+
+- **Descrição**: histórico de hemoglobina glicada em percentual, com datas de realização e resultado.
+- **Filtros**: `paciente_id`, `data_inicio`, `data_fim`, `limite` (1–200).
+- **Guardrails**: abrange prontuários agrupados, não retorna identificadores diretos e não infere causalidade.
+- **Detalhes**: `docs/hba1c.md`.
+
+# Tool: listar_prescricoes_medicamentos
+
+- **Descrição**: histórico estruturado de prescrição, incluindo dose, frequência, posologia, vigência, renovação e interrupção.
+- **Filtros**: `paciente_id`, `estado`, `medicamento`, `limite` (1–500).
+- **Guardrails**: abrange prontuários agrupados, exclui atendimentos cancelados, mantém texto e campos estruturados separados e sinaliza divergência documental sem decidir qual registro prevalece.
+- **Detalhes**: `docs/prescricoes_medicamentos.md`.

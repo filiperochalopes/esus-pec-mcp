@@ -32,8 +32,10 @@ from pec_mcp.tools.medicoes import (
     listar_registros_hgt,
     listar_registros_pa,
 )
+from pec_mcp.tools.exames import listar_resultados_hba1c
 from pec_mcp.tools.obter_codigos_condicao_saude import obter_codigos_condicao_saude
 from pec_mcp.tools.paciente import capturar_paciente
+from pec_mcp.tools.prescricoes import listar_prescricoes_medicamentos
 from pec_mcp.tools.unidades import listar_unidades_saude
 from pec_mcp.tools.visitas_acs import listar_visitas_acs
 
@@ -223,6 +225,46 @@ _LINHA_HGT = _linha(
     valor_str="118",
     tp_glicemia=0,
     **_MEDICAO_COMUM,
+)
+
+_LINHA_HBA1C = _linha(
+    valor_percentual="7.4",
+    dt_realizacao=DATA_MEDICAO,
+    dt_resultado=DATA_MEDICAO,
+)
+
+_LINHA_PRESCRICAO = _linha(
+    prescricao_id=51,
+    atendimento_id=21,
+    data_prescricao=DATA_ATENDIMENTO,
+    medicamento="Medicamento sintetico",
+    concentracao="Concentracao sintetica",
+    unidade_fornecimento="comprimido",
+    dose="1",
+    unidade_dose_id=1,
+    dose_manha="1",
+    dose_tarde=None,
+    dose_noite=None,
+    frequencia_tipo=1,
+    frequencia_descricao="Manha",
+    frequencia_periodo=None,
+    frequencia_unidade_tempo=None,
+    posologia="Posologia sintetica",
+    via_administracao_id=1,
+    quantidade_receitada="30",
+    inicio_tratamento=DATA_CONDICAO_INICIO,
+    fim_tratamento=DATA_CONDICAO_FIM,
+    duracao_tratamento="30",
+    duracao_unidade_tempo=1,
+    uso_continuo=True,
+    dose_unica=False,
+    recomendacao="Recomendacao clinica sintetica.",
+    interrompido=False,
+    data_interrupcao=None,
+    motivo_interrupcao=None,
+    grupo_renovacao_id=51,
+    cid_code="E11",
+    ciap_code="T90",
 )
 
 _LINHA_UNIDADE = _linha(
@@ -425,6 +467,70 @@ CASOS: Dict[str, CasoTool] = {
             }
         ),
         teto_limite=200,
+        argumentos_limite={"limite": 10_000},
+    ),
+    "listar_resultados_hba1c": CasoTool(
+        tool=listar_resultados_hba1c,
+        modulo="exames",
+        consulta="query_all",
+        argumentos={"paciente_id": 1},
+        linhas=[_LINHA_HBA1C],
+        chaves_permitidas=frozenset(
+            {
+                "paciente_id",
+                "valor_percentual",
+                "data_realizacao",
+                "data_resultado",
+            }
+        ),
+        teto_limite=200,
+        argumentos_limite={"limite": 10_000},
+    ),
+    "listar_prescricoes_medicamentos": CasoTool(
+        tool=listar_prescricoes_medicamentos,
+        modulo="prescricoes",
+        consulta="query_all",
+        argumentos={"paciente_id": 1},
+        linhas=[_LINHA_PRESCRICAO],
+        chaves_permitidas=frozenset(
+            {
+                "paciente_id",
+                "prescricao_id",
+                "atendimento_id",
+                "data_prescricao",
+                "medicamento",
+                "concentracao",
+                "unidade_fornecimento",
+                "dose",
+                "unidade_dose_id",
+                "dose_manha",
+                "dose_tarde",
+                "dose_noite",
+                "frequencia_tipo",
+                "frequencia_descricao",
+                "frequencia_periodo",
+                "frequencia_unidade_tempo",
+                "posologia",
+                "via_administracao_id",
+                "quantidade_receitada",
+                "inicio_tratamento",
+                "fim_tratamento",
+                "duracao_tratamento",
+                "duracao_unidade_tempo",
+                "uso_continuo",
+                "dose_unica",
+                "recomendacao",
+                "interrompido",
+                "data_interrupcao",
+                "motivo_interrupcao",
+                "grupo_renovacao_id",
+                "cid_code",
+                "ciap_code",
+                "estado",
+                "alerta_consistencia_documental",
+            }
+        ),
+        teto_limite=500,
         argumentos_limite={"limite": 10_000},
     ),
     "listar_visitas_acs": CasoTool(

@@ -145,6 +145,50 @@ class HGTResult(TypedDict):
     origem: str
 
 
+class HbA1cResult(TypedDict):
+    paciente_id: int
+    valor_percentual: Optional[float]
+    data_realizacao: Optional[str]
+    data_resultado: Optional[str]
+
+
+class MedicationPrescriptionResult(TypedDict):
+    paciente_id: int
+    prescricao_id: int
+    atendimento_id: int
+    data_prescricao: Optional[str]
+    medicamento: Optional[str]
+    concentracao: Optional[str]
+    unidade_fornecimento: Optional[str]
+    dose: Optional[str]
+    unidade_dose_id: Optional[int]
+    dose_manha: Optional[str]
+    dose_tarde: Optional[str]
+    dose_noite: Optional[str]
+    frequencia_tipo: Optional[int]
+    frequencia_descricao: Optional[str]
+    frequencia_periodo: Optional[str]
+    frequencia_unidade_tempo: Optional[int]
+    posologia: Optional[str]
+    via_administracao_id: Optional[int]
+    quantidade_receitada: Optional[str]
+    inicio_tratamento: Optional[str]
+    fim_tratamento: Optional[str]
+    duracao_tratamento: Optional[str]
+    duracao_unidade_tempo: Optional[int]
+    uso_continuo: bool
+    dose_unica: bool
+    recomendacao: Optional[str]
+    interrompido: bool
+    data_interrupcao: Optional[str]
+    motivo_interrupcao: Optional[str]
+    grupo_renovacao_id: Optional[int]
+    cid_code: Optional[str]
+    ciap_code: Optional[str]
+    estado: str
+    alerta_consistencia_documental: bool
+
+
 class VisitaACSResult(TypedDict):
     visita_id: int
     profissional: Optional[str]
@@ -177,6 +221,8 @@ __all__ = [
     "AntropometriaResult",
     "PAResult",
     "HGTResult",
+    "HbA1cResult",
+    "MedicationPrescriptionResult",
     "VisitaACSResult",
     "VisitaACSCountResult",
 ]
