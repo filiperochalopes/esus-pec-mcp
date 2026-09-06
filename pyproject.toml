@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 dependencies = [
-  "mcp[cli]",
+  "mcp[cli]<2",
   "psycopg2-binary>=2.9",
   "python-dotenv>=1.0",
 ]

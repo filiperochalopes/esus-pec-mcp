@@ -21,7 +21,7 @@ SELECT
     us.st_ativo               AS ativo
 FROM tb_unidade_saude us
 JOIN tb_tipo_unidade_saude tu ON tu.co_seq_tipo_unidade_saude = us.tp_unidade_saude
-WHERE tu.no_tipo_unidade_saude = 'CENTRO DE SAUDE/UNIDADE BASICA'
+WHERE tu.co_tipo_unidade_cnes = 2
 ORDER BY us.no_unidade_saude;
 """
 
