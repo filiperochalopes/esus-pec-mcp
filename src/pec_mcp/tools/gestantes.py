@@ -36,6 +36,7 @@ WITH g AS (
 SELECT
     g.gestacao_id,
     g.paciente_id,
+    g.nome_paciente,
     COALESCE(
         g.dt_provavel_parto_eco,
         (g.dt_ultima_menstruacao::date + INTERVAL '280 days')::date

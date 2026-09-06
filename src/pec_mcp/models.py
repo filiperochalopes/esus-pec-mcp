@@ -42,10 +42,9 @@ class CountResult(TypedDict):
     count: int
 
 
-# `tools/gestantes.py` não está em STANDALONE_TOOLS, mas tem teste unitário
-# próprio (tests/test_tool_gestantes.py) que só coletava com este TypedDict
-# declarado. A tool já anonimiza corretamente (to_initials + sem data de
-# nascimento na saída).
+# `tools/gestantes.py` está registrada em STANDALONE_TOOLS e é coberta pela
+# suíte de privacidade via tests/casos_tools.py. A tool já anonimiza
+# corretamente (to_initials + sem data de nascimento na saída).
 class GestanteResult(TypedDict):
     gestacao_id: int
     paciente_id: int

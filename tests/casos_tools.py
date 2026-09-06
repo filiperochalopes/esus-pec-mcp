@@ -33,6 +33,7 @@ from pec_mcp.tools.medicoes import (
     listar_registros_pa,
 )
 from pec_mcp.tools.exames import listar_resultados_hba1c
+from pec_mcp.tools.gestantes import listar_gestantes
 from pec_mcp.tools.obter_codigos_condicao_saude import obter_codigos_condicao_saude
 from pec_mcp.tools.paciente import capturar_paciente
 from pec_mcp.tools.prescricoes import listar_prescricoes_medicamentos
@@ -276,6 +277,19 @@ _LINHA_UNIDADE = _linha(
 )
 
 _LINHA_CODIGO = _linha(code="J45", description="Asma")
+
+_LINHA_GESTANTE = _linha(
+    gestacao_id=61,
+    paciente_id=1,
+    nome_paciente=NOME_PACIENTE,
+    dpp=DATA_VISITA,
+    idade_gestacional_semanas=20,
+    idade_gestacional_dias=3,
+    idade_gestacional_str="20s3d",
+    tp_gravidez="Unica",
+    st_alto_risco="Nao",
+    situacao="ativa",
+)
 
 _LINHA_VISITA = _linha(
     visita_id=41,
@@ -531,6 +545,30 @@ CASOS: Dict[str, CasoTool] = {
             }
         ),
         teto_limite=500,
+        argumentos_limite={"limite": 10_000},
+    ),
+    "listar_gestantes": CasoTool(
+        tool=listar_gestantes,
+        modulo="gestantes",
+        consulta="query_all",
+        argumentos={},
+        linhas=[_LINHA_GESTANTE],
+        chaves_permitidas=frozenset(
+            {
+                "gestacao_id",
+                "paciente_id",
+                "paciente_initials",
+                "dpp",
+                "idade_gestacional_semanas",
+                "idade_gestacional_dias",
+                "idade_gestacional_str",
+                "tp_gravidez",
+                "st_alto_risco",
+                "situacao",
+            }
+        ),
+        campos_de_iniciais=("paciente_initials",),
+        teto_limite=200,
         argumentos_limite={"limite": 10_000},
     ),
     "listar_visitas_acs": CasoTool(
